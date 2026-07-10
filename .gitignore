@@ -1,0 +1,33 @@
+# Virtualno Python okruženje
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+
+# Runtime mape
+output/
+temp/
+logs/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Test cache
+.pytest_cache/
+.coverage
+
+# Operacijski sustav
+Thumbs.db
+.DS_Store
+
+# Log datoteke
+*.log
