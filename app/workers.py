@@ -4,12 +4,18 @@ from threading import Event
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from app.constants import IMAGE_EXTENSIONS
+from app.constants import (
+    IMAGE_EXTENSIONS,
+    OFFICE_EXTENSIONS,
+)
 from converters.base_converter import (
     ConversionCancelledError,
     check_cancelled,
 )
 from converters.image_converter import convert_image
+from converters.office_converter import (
+    convert_office_to_pdf,
+)
 from converters.pdf_converter import (
     convert_image_to_pdf,
     convert_pdf_to_images,
@@ -35,6 +41,7 @@ class ConversionWorker(QObject):
         dpi: int = 150,
         page_selection: str | None = None,
         multi_page_output_mode: str = "folder",
+        libreoffice_path: str | Path | None = None,
     ) -> None:
         super().__init__()
 
@@ -46,15 +53,15 @@ class ConversionWorker(QObject):
         self.page_selection = page_selection
         self.multi_page_output_mode = multi_page_output_mode
 
+        self.libreoffice_path = (
+            Path(libreoffice_path)
+            if libreoffice_path is not None
+            else None
+        )
+
         self._cancel_event = Event()
 
     def cancel(self) -> None:
-        """
-        Thread-safe zahtjev za prekid.
-
-        Ova metoda samo postavlja Event, pa je sigurno pozvati
-        je iz glavnog UI threada.
-        """
         self._cancel_event.set()
 
     def is_cancelled(self) -> bool:
@@ -81,9 +88,30 @@ class ConversionWorker(QObject):
                     quality=self.quality,
                     page_selection=self.page_selection,
                     multi_page_output_mode=self.multi_page_output_mode,
+                    cancel_check=self.is_cancelled,
                     progress_callback=self.progress_changed.emit,
                     status_callback=self.status_changed.emit,
+                )
+
+            elif extension in OFFICE_EXTENSIONS:
+                if self.output_format != "PDF":
+                    raise ValueError(
+                        "Office dokumenti trenutačno se "
+                        "mogu pretvoriti samo u PDF."
+                    )
+
+                if self.libreoffice_path is None:
+                    raise ValueError(
+                        "LibreOffice putanja nije postavljena."
+                    )
+
+                result_path = convert_office_to_pdf(
+                    input_file=self.input_file,
+                    output_directory=self.output_directory,
+                    libreoffice_executable=self.libreoffice_path,
                     cancel_check=self.is_cancelled,
+                    progress_callback=self.progress_changed.emit,
+                    status_callback=self.status_changed.emit,
                 )
 
             else:
@@ -91,8 +119,6 @@ class ConversionWorker(QObject):
                     "Odabrani format još nije podržan za konverziju."
                 )
 
-            # Kod konverzija koje se ne mogu zaustaviti usred spremanja,
-            # provjeravamo prekid odmah nakon završetka i brišemo rezultat.
             check_cancelled(self.is_cancelled)
 
             self.conversion_finished.emit(str(result_path))
@@ -125,16 +151,18 @@ class ConversionWorker(QObject):
         )
 
     @staticmethod
-    def _remove_cancelled_result(result_path: Path) -> None:
-        """Briše rezultat koji je nastao nakon zahtjeva za prekid."""
+    def _remove_cancelled_result(
+        result_path: Path,
+    ) -> None:
         try:
             if result_path.is_dir():
-                shutil.rmtree(result_path, ignore_errors=True)
+                shutil.rmtree(
+                    result_path,
+                    ignore_errors=True,
+                )
 
             elif result_path.exists():
                 result_path.unlink(missing_ok=True)
 
         except OSError:
-            # Prekid konverzije ne smije srušiti aplikaciju
-            # ako Windows trenutačno drži rezultat zaključanim.
             pass

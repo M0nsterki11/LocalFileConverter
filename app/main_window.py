@@ -24,6 +24,7 @@ from app.constants import (
     APP_NAME,
     FILE_DIALOG_FILTER,
     IMAGE_EXTENSIONS,
+    OFFICE_EXTENSIONS,
 )
 from app.workers import ConversionWorker
 from utils.file_utils import (
@@ -35,6 +36,16 @@ from utils.format_utils import (
     get_display_format,
     get_file_extension,
     is_supported_file,
+)
+
+from app.settings import (
+    get_saved_libreoffice_path,
+    save_libreoffice_path,
+)
+from utils.libreoffice_utils import (
+    find_libreoffice,
+    get_default_libreoffice_browse_directory,
+    is_valid_libreoffice_executable,
 )
 
 
@@ -115,6 +126,12 @@ class MainWindow(QMainWindow):
         self.selected_file: Path | None = None
         self.output_directory = get_default_output_directory()
 
+        saved_libreoffice_path = get_saved_libreoffice_path()
+
+        self.libreoffice_path = find_libreoffice(
+            saved_libreoffice_path
+        )
+
         self.conversion_thread: QThread | None = None
         self.conversion_worker: ConversionWorker | None = None
         self.is_converting = False
@@ -130,6 +147,7 @@ class MainWindow(QMainWindow):
             self._cancel_conversion
         )
         self._update_output_directory_label()
+        self._refresh_libreoffice_ui()
         self._update_context_controls()
         self._update_controls()
 
@@ -418,6 +436,76 @@ class MainWindow(QMainWindow):
         conversion_layout.setColumnStretch(1, 1)
         main_layout.addWidget(conversion_group)
 
+        self.libreoffice_group = QGroupBox(
+            "LibreOffice za Office → PDF"
+        )
+
+        libreoffice_layout = QGridLayout(
+            self.libreoffice_group
+        )
+        libreoffice_layout.setHorizontalSpacing(12)
+        libreoffice_layout.setVerticalSpacing(10)
+
+        self.libreoffice_path_input = QLineEdit()
+        self.libreoffice_path_input.setReadOnly(True)
+        self.libreoffice_path_input.setMinimumHeight(38)
+        self.libreoffice_path_input.setPlaceholderText(
+            "LibreOffice nije pronađen"
+        )
+
+        self.detect_libreoffice_button = QPushButton(
+            "Pronađi automatski"
+        )
+        self.detect_libreoffice_button.setMinimumHeight(38)
+
+        self.select_libreoffice_button = QPushButton(
+            "Odaberi soffice.exe"
+        )
+        self.select_libreoffice_button.setMinimumHeight(38)
+
+        libreoffice_description = QLabel(
+            "LibreOffice je potreban za DOCX, PPTX i XLSX "
+            "konverzije. Putanja se sprema za sljedeće pokretanje."
+        )
+        libreoffice_description.setObjectName(
+            "dropDescription"
+        )
+        libreoffice_description.setWordWrap(True)
+
+        libreoffice_layout.addWidget(
+            QLabel("Program:"),
+            0,
+            0,
+        )
+        libreoffice_layout.addWidget(
+            self.libreoffice_path_input,
+            0,
+            1,
+            1,
+            2,
+        )
+        libreoffice_layout.addWidget(
+            self.detect_libreoffice_button,
+            1,
+            1,
+        )
+        libreoffice_layout.addWidget(
+            self.select_libreoffice_button,
+            1,
+            2,
+        )
+        libreoffice_layout.addWidget(
+            libreoffice_description,
+            2,
+            0,
+            1,
+            3,
+        )
+
+        libreoffice_layout.setColumnStretch(1, 1)
+
+        main_layout.addWidget(self.libreoffice_group)
+
         self.convert_button = QPushButton("CONVERT")
         self.convert_button.setObjectName("convertButton")
         self.convert_button.setMinimumHeight(50)
@@ -498,6 +586,14 @@ class MainWindow(QMainWindow):
             self._start_conversion
         )
 
+        self.detect_libreoffice_button.clicked.connect(
+            self._detect_libreoffice
+        )
+
+        self.select_libreoffice_button.clicked.connect(
+            self._select_libreoffice
+        )
+
     def _select_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -562,13 +658,125 @@ class MainWindow(QMainWindow):
                 "Status: PDF je spreman za konverziju."
             )
 
+        elif extension in OFFICE_EXTENSIONS:
+            if self.libreoffice_path is None:
+                detected_path = find_libreoffice()
+
+                if detected_path is not None:
+                    self.libreoffice_path = detected_path
+                    save_libreoffice_path(detected_path)
+                    self._refresh_libreoffice_ui()
+
+            if is_valid_libreoffice_executable(
+                self.libreoffice_path
+            ):
+                self.status_label.setText(
+                    "Status: Office dokument je spreman "
+                    "za konverziju u PDF."
+                )
+            else:
+                self.status_label.setText(
+                    "Status: LibreOffice nije pronađen. "
+                    "Odaberi soffice.exe prije konverzije."
+                )
+
         else:
             self.status_label.setText(
-                "Status: Office konverzije bit će "
-                "implementirane u sljedećoj fazi."
+                "Status: Ovaj format još nije podržan."
             )
 
         self._update_context_controls()
+        self._update_controls()
+
+    def _detect_libreoffice(self) -> None:
+        detected_path = find_libreoffice()
+
+        if detected_path is None:
+            QMessageBox.warning(
+                self,
+                "LibreOffice nije pronađen",
+                (
+                    "LibreOffice nije automatski pronađen. "
+                    "Instaliraj LibreOffice ili ručno odaberi "
+                    "datoteku soffice.exe."
+                ),
+            )
+            return
+
+        self.libreoffice_path = detected_path
+        save_libreoffice_path(detected_path)
+
+        self._refresh_libreoffice_ui()
+
+        self.status_label.setText(
+            "Status: LibreOffice je uspješno pronađen."
+        )
+
+    def _select_libreoffice(self) -> None:
+        if self.libreoffice_path is not None:
+            start_directory = self.libreoffice_path.parent
+        else:
+            start_directory = (
+                get_default_libreoffice_browse_directory()
+            )
+
+        executable_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Odaberi LibreOffice soffice.exe",
+            str(start_directory),
+            (
+                "LibreOffice executable (soffice.exe);;"
+                "Izvršne datoteke (*.exe);;"
+                "Sve datoteke (*.*)"
+            ),
+        )
+
+        if not executable_path:
+            return
+
+        selected_path = Path(executable_path)
+
+        if not is_valid_libreoffice_executable(
+            selected_path
+        ):
+            QMessageBox.warning(
+                self,
+                "Neispravna LibreOffice datoteka",
+                (
+                    "Odaberi datoteku soffice.exe iz LibreOffice "
+                    "programske mape.\n\n"
+                    "Uobičajena putanja je:\n"
+                    r"C:\Program Files\LibreOffice\program\soffice.exe"
+                ),
+            )
+            return
+
+        self.libreoffice_path = selected_path.resolve()
+        save_libreoffice_path(self.libreoffice_path)
+
+        self._refresh_libreoffice_ui()
+
+        self.status_label.setText(
+            "Status: LibreOffice putanja je spremljena."
+        )
+
+    def _refresh_libreoffice_ui(self) -> None:
+        if is_valid_libreoffice_executable(
+            self.libreoffice_path
+        ):
+            self.libreoffice_path_input.setText(
+                str(self.libreoffice_path)
+            )
+            self.libreoffice_path_input.setToolTip(
+                str(self.libreoffice_path)
+            )
+        else:
+            self.libreoffice_path = None
+            self.libreoffice_path_input.clear()
+            self.libreoffice_path_input.setPlaceholderText(
+                "LibreOffice nije pronađen"
+            )
+
         self._update_controls()
 
     def _select_output_directory(self) -> None:
@@ -645,6 +853,7 @@ class MainWindow(QMainWindow):
         )
 
         pdf_input = input_extension == ".pdf"
+        office_input = input_extension in OFFICE_EXTENSIONS
 
         self.page_mode_label.setVisible(pdf_input)
         self.page_mode_combo.setVisible(pdf_input)
@@ -652,6 +861,7 @@ class MainWindow(QMainWindow):
         self.dpi_combo.setVisible(pdf_input)
         self.multi_page_output_label.setVisible(pdf_input)
         self.multi_page_output_combo.setVisible(pdf_input)
+        self.libreoffice_group.setVisible(office_input)
 
         selected_page_mode = (
             self.page_mode_combo.currentData()
@@ -687,8 +897,20 @@ class MainWindow(QMainWindow):
             and output_format in {"JPG", "PNG"}
         )
 
+        office_conversion = (
+            input_extension in OFFICE_EXTENSIONS
+            and output_format == "PDF"
+            and is_valid_libreoffice_executable(
+                self.libreoffice_path
+            )
+        )
+
         conversion_ready = (
-            (image_conversion or pdf_conversion)
+            (
+                image_conversion
+                or pdf_conversion
+                or office_conversion
+            )
             and not self.is_converting
         )
 
@@ -718,6 +940,12 @@ class MainWindow(QMainWindow):
             not running
         )
         self.page_range_input.setEnabled(
+            not running
+        )
+        self.detect_libreoffice_button.setEnabled(
+            not running
+        )
+        self.select_libreoffice_button.setEnabled(
             not running
         )
         self.dpi_combo.setEnabled(not running)
@@ -758,9 +986,25 @@ class MainWindow(QMainWindow):
 
         page_selection: str | None = None
 
+        input_extension = self.selected_file.suffix.lower()
+
+        if input_extension in OFFICE_EXTENSIONS:
+            if not is_valid_libreoffice_executable(
+                self.libreoffice_path
+            ):
+                QMessageBox.warning(
+                    self,
+                    "LibreOffice nije pronađen",
+                    (
+                        "Za pretvaranje DOCX, PPTX i XLSX "
+                        "dokumenata potreban je LibreOffice.\n\n"
+                        "Odaberi valjanu soffice.exe datoteku."
+                    ),
+                )
+                return
+
         if (
-            self.selected_file.suffix.lower()
-            == ".pdf"
+            input_extension == ".pdf"
             and self.page_mode_combo.currentData()
             == "selected"
         ):
@@ -821,6 +1065,7 @@ class MainWindow(QMainWindow):
             dpi=dpi,
             page_selection=page_selection,
             multi_page_output_mode=multi_page_output_mode,
+            libreoffice_path=self.libreoffice_path,
         )
 
         self.conversion_worker.moveToThread(

@@ -3,7 +3,10 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
-from app.constants import APP_NAME
+from app.constants import (
+    APP_NAME,
+    APP_ORGANIZATION,
+)
 from app.main_window import MainWindow
 
 STYLESHEET_PATH = (
@@ -28,6 +31,7 @@ def load_stylesheet(app: QApplication) -> None:
 
 def main() -> int:
     app = QApplication(sys.argv)
+    app.setOrganizationName(APP_ORGANIZATION)
     app.setApplicationName(APP_NAME)
 
     load_stylesheet(app)

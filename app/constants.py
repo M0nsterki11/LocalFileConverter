@@ -1,5 +1,6 @@
 APP_NAME = "Local File Converter"
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.3.0"
+APP_ORGANIZATION = "LocalFileConverter"
 
 IMAGE_EXTENSIONS = {
     ".jpg",
@@ -8,14 +9,18 @@ IMAGE_EXTENSIONS = {
     ".webp",
 }
 
+OFFICE_EXTENSIONS = {
+    ".docx",
+    ".pptx",
+    ".xlsx",
+}
+
 PDF_EXTENSION = ".pdf"
 
 SUPPORTED_INPUT_EXTENSIONS = {
     *IMAGE_EXTENSIONS,
+    *OFFICE_EXTENSIONS,
     PDF_EXTENSION,
-    ".docx",
-    ".pptx",
-    ".xlsx",
 }
 
 OUTPUT_FORMATS_BY_EXTENSION = {
