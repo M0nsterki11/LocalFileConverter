@@ -1,11 +1,9 @@
 from collections.abc import Callable
 
+from app.exceptions import ConversionCancelledError
+
 
 CancelCheck = Callable[[], bool]
-
-
-class ConversionCancelledError(Exception):
-    """Konverziju je prekinuo korisnik."""
 
 
 def check_cancelled(

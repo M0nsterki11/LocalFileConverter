@@ -15,6 +15,7 @@ __pycache__/
 output/
 temp/
 logs/
+test-output/
 
 # PyInstaller
 build/
@@ -31,3 +32,11 @@ Thumbs.db
 
 # Log datoteke
 *.log
+*.log.*
+
+# Privremeni rezultati
+*.part
+.lfc_write_test_*.tmp
+
+# Office lock datoteke
+~$*

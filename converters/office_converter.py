@@ -7,14 +7,24 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from app.constants import OFFICE_EXTENSIONS
+from app.exceptions import ConversionError, DependencyNotFoundError
 from converters.base_converter import (
     CancelCheck,
     ConversionCancelledError,
     check_cancelled,
 )
+from utils.input_validation import validate_input_file_for_conversion
 from utils.file_utils import generate_unique_output_path
 from utils.libreoffice_utils import (
     is_valid_libreoffice_executable,
+)
+from utils.output_safety import (
+    cleanup_temporary_path,
+    ensure_output_directory_ready,
+    ensure_sufficient_disk_space,
+    estimate_required_space_bytes,
+    get_temporary_output_path,
+    publish_temporary_file,
 )
 
 
@@ -22,7 +32,7 @@ ProgressCallback = Callable[[int], None]
 StatusCallback = Callable[[str], None]
 
 
-class OfficeConversionError(Exception):
+class OfficeConversionError(ConversionError):
     """Greška nastala tijekom LibreOffice konverzije."""
 
 
@@ -44,7 +54,14 @@ def convert_office_to_pdf(
     Originalna datoteka ostaje netaknuta.
     """
     input_path = Path(input_file)
-    output_path = Path(output_directory)
+    output_path = ensure_output_directory_ready(output_directory)
+    ensure_sufficient_disk_space(
+        output_path,
+        estimate_required_space_bytes(
+            input_path,
+            operation="office_to_pdf",
+        ),
+    )
     soffice_path = Path(libreoffice_executable)
 
     _validate_conversion_input(
@@ -149,6 +166,7 @@ def convert_office_to_pdf(
             output_directory=output_path,
             output_extension=".pdf",
         )
+        temporary_result_path = get_temporary_output_path(result_path)
 
         _emit_status(
             status_callback,
@@ -159,12 +177,20 @@ def convert_office_to_pdf(
         try:
             shutil.move(
                 str(generated_pdf),
-                str(result_path),
+                str(temporary_result_path),
+            )
+            result_path = publish_temporary_file(
+                temporary_result_path,
+                result_path,
             )
         except OSError as error:
+            cleanup_temporary_path(temporary_result_path)
             raise OfficeConversionError(
                 f"Nije moguće spremiti PDF rezultat:\n{error}"
             ) from error
+        except Exception:
+            cleanup_temporary_path(temporary_result_path)
+            raise
 
     if not result_path.exists():
         raise OfficeConversionError(
@@ -185,6 +211,8 @@ def _validate_conversion_input(
     input_path: Path,
     soffice_path: Path,
 ) -> None:
+    validate_input_file_for_conversion(input_path)
+
     if not input_path.exists() or not input_path.is_file():
         raise OfficeConversionError(
             "Odabrani Office dokument ne postoji."
@@ -196,7 +224,7 @@ def _validate_conversion_input(
         )
 
     if not is_valid_libreoffice_executable(soffice_path):
-        raise OfficeConversionError(
+        raise DependencyNotFoundError(
             "LibreOffice nije pronađen. "
             "Odaberi valjanu soffice.exe datoteku."
         )

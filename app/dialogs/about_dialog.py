@@ -15,6 +15,7 @@ from app.constants import (
     GITHUB_REPOSITORY_URL,
 )
 from app.icon_provider import get_app_icon
+from utils.logging_utils import open_log_directory
 
 
 class AboutDialog(QDialog):
@@ -50,6 +51,9 @@ class AboutDialog(QDialog):
             "Aplikacija je napravljena u Pythonu i PySide6. "
             "LibreOffice se koristi kao vanjski alat kada je odabran "
             "ili potreban za Office konverziju.\n\n"
+            "Aplikacija sprema lokalni tehnicki log za greske. "
+            "Log ne sadrzi sadrzaj dokumenata i mozes ga otvoriti "
+            "ili obrisati iz svoje korisnicke mape.\n\n"
             f"GitHub: {GITHUB_REPOSITORY_URL}\n"
             f"Copyright {date.today().year}"
         )
@@ -60,8 +64,11 @@ class AboutDialog(QDialog):
 
         button_layout = QHBoxLayout()
         button_layout.addStretch()
+        logs_button = QPushButton("Otvori mapu s logovima")
+        logs_button.clicked.connect(open_log_directory)
         close_button = QPushButton("Zatvori")
         close_button.clicked.connect(self.accept)
+        button_layout.addWidget(logs_button)
         button_layout.addWidget(close_button)
 
         root_layout.addWidget(title_label)

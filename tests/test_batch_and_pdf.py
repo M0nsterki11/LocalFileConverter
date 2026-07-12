@@ -130,7 +130,7 @@ def test_batch_worker_continues_after_item_failure(
     worker.run()
 
     assert bad_item.status == ConversionStatus.FAILED
-    assert bad_item.error_message == "broken file"
+    assert "neocekivane greske" in bad_item.error_message
     assert good_item.status == ConversionStatus.SUCCESS
     assert good_item.result_path == tmp_path / "good.png"
 

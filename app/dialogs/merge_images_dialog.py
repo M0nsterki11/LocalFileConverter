@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from threading import Event
+import time
 
 from PySide6.QtCore import QObject, QThread, Qt, Signal
 from PySide6.QtWidgets import (
@@ -25,7 +27,13 @@ from app.conversion_item import normalize_input_path
 from app.icon_provider import get_icon
 from converters.base_converter import ConversionCancelledError
 from converters.pdf_converter import convert_images_to_pdf
+from utils.error_handler import exception_to_error_info
 from utils.file_utils import get_default_output_directory
+from utils.logging_utils import (
+    LOGGER_NAME,
+    log_exception_safely,
+    sanitize_path,
+)
 
 
 class MergeImagesWorker(QObject):
@@ -54,6 +62,9 @@ class MergeImagesWorker(QObject):
         return self._cancel_event.is_set()
 
     def run(self) -> None:
+        logger = logging.getLogger(LOGGER_NAME)
+        started_at = time.monotonic()
+
         try:
             result_path = convert_images_to_pdf(
                 input_files=self.image_paths,
@@ -63,15 +74,31 @@ class MergeImagesWorker(QObject):
                 progress_callback=self.progress_changed.emit,
                 status_callback=self.status_changed.emit,
             )
+            logger.info(
+                "Merge images finished files=%d result=%s duration=%.2fs",
+                len(self.image_paths),
+                sanitize_path(result_path),
+                time.monotonic() - started_at,
+            )
             self.merge_finished.emit(str(result_path))
 
         except ConversionCancelledError as error:
+            logger.info(
+                "Merge images cancelled files=%d duration=%.2fs",
+                len(self.image_paths),
+                time.monotonic() - started_at,
+            )
             self.merge_cancelled.emit(str(error))
 
         except Exception as error:
-            self.merge_failed.emit(
-                str(error) or error.__class__.__name__
+            error_info = exception_to_error_info(error)
+            log_exception_safely(
+                logger,
+                "Merge images failed files=%d duration=%.2fs",
+                len(self.image_paths),
+                time.monotonic() - started_at,
             )
+            self.merge_failed.emit(error_info.message)
 
 
 class MergeImagesDialog(QDialog):

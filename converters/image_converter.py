@@ -1,18 +1,30 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.constants import IMAGE_EXTENSIONS
+from app.exceptions import ConversionError, UnsupportedFormatError
 from utils.file_utils import generate_unique_output_path
+from utils.input_validation import validate_image_file
+from utils.output_safety import (
+    cleanup_temporary_path,
+    ensure_output_directory_ready,
+    ensure_sufficient_disk_space,
+    estimate_required_space_bytes,
+    get_temporary_output_path,
+    publish_temporary_file,
+)
 
 
 ProgressCallback = Callable[[int], None]
 StatusCallback = Callable[[str], None]
 
 
-class ImageConversionError(Exception):
-    """Greška nastala tijekom konverzije slike."""
+class ImageConversionError(ConversionError):
+    """Error raised while converting an image."""
 
 
 OUTPUT_EXTENSIONS = {
@@ -30,49 +42,36 @@ def convert_image(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
-    """
-    Pretvara JPG, PNG i WEBP slike.
-
-    Originalna datoteka se nikada ne mijenja.
-    """
-    input_path = Path(input_file)
-    output_path = Path(output_directory)
+    input_path = validate_image_file(input_file)
+    output_path = ensure_output_directory_ready(output_directory)
     normalized_format = output_format.upper()
 
-    if not input_path.exists():
-        raise ImageConversionError(
-            f"Ulazna datoteka ne postoji:\n{input_path}"
-        )
-
-    if not input_path.is_file():
-        raise ImageConversionError(
-            "Odabrana putanja nije datoteka."
-        )
-
     if input_path.suffix.lower() not in IMAGE_EXTENSIONS:
-        raise ImageConversionError(
-            f"Format {input_path.suffix} nije podržana slika."
+        raise UnsupportedFormatError(
+            f"Format {input_path.suffix} nije podrzana slika."
         )
 
     if normalized_format not in OUTPUT_EXTENSIONS:
-        raise ImageConversionError(
-            f"Izlazni format {normalized_format} nije podržan."
+        raise UnsupportedFormatError(
+            f"Izlazni format {normalized_format} nije podrzan."
         )
 
     quality = max(1, min(100, int(quality)))
+    ensure_sufficient_disk_space(
+        output_path,
+        estimate_required_space_bytes(
+            input_path,
+            operation="image_to_image",
+            output_format=normalized_format,
+        ),
+    )
 
-    try:
-        output_path.mkdir(parents=True, exist_ok=True)
-    except OSError as error:
-        raise ImageConversionError(
-            f"Nije moguće stvoriti izlaznu mapu:\n{error}"
-        ) from error
-
-    result_path = generate_unique_output_path(
+    requested_result_path = generate_unique_output_path(
         input_file=input_path,
         output_directory=output_path,
         output_extension=OUTPUT_EXTENSIONS[normalized_format],
     )
+    temporary_path = get_temporary_output_path(requested_result_path)
 
     try:
         _emit_status(
@@ -83,8 +82,6 @@ def convert_image(
 
         with Image.open(input_path) as source_image:
             source_image.load()
-
-            # Ispravlja rotaciju fotografija snimljenih mobitelom.
             image = ImageOps.exif_transpose(source_image)
 
             _emit_status(
@@ -100,56 +97,60 @@ def convert_image(
 
             _emit_status(
                 status_callback,
-                f"Spremanje datoteke {result_path.name}...",
+                f"Spremanje datoteke {requested_result_path.name}...",
             )
             _emit_progress(progress_callback, 70)
 
             _save_image(
                 image=prepared_image,
-                output_path=result_path,
+                output_path=temporary_path,
                 output_format=normalized_format,
                 quality=quality,
             )
 
-        if not result_path.exists():
-            raise ImageConversionError(
-                "Konverzija je završila, ali izlazna datoteka nije pronađena."
-            )
+            if prepared_image is not image:
+                prepared_image.close()
+
+        result_path = publish_temporary_file(
+            temporary_path,
+            requested_result_path,
+        )
 
         _emit_progress(progress_callback, 100)
-        _emit_status(status_callback, "Konverzija je završena.")
-
+        _emit_status(status_callback, "Konverzija je zavrsena.")
         return result_path
 
     except UnidentifiedImageError as error:
+        cleanup_temporary_path(temporary_path)
         raise ImageConversionError(
-            "Datoteka nije valjana slika ili je oštećena."
+            "Datoteka nije valjana slika ili je ostecena."
         ) from error
 
     except PermissionError as error:
+        cleanup_temporary_path(temporary_path)
         raise ImageConversionError(
-            "Nema dozvole za čitanje ili spremanje datoteke."
+            "Nema dozvole za citanje ili spremanje datoteke."
         ) from error
 
     except ImageConversionError:
+        cleanup_temporary_path(temporary_path)
         raise
 
     except OSError as error:
+        cleanup_temporary_path(temporary_path)
         raise ImageConversionError(
-            f"Slika se nije mogla konvertirati:\n{error}"
+            f"Slika se nije mogla konvertirati: {error}"
         ) from error
+
+    except Exception:
+        cleanup_temporary_path(temporary_path)
+        raise
 
 
 def _prepare_image(
     image: Image.Image,
     output_format: str,
 ) -> Image.Image:
-    """
-    Priprema način boja ovisno o izlaznom formatu.
-
-    JPG ne podržava transparentnost, pa se transparentna pozadina
-    zamjenjuje bijelom pozadinom.
-    """
     if output_format == "JPG":
         return _prepare_for_jpeg(image)
 
@@ -171,28 +172,24 @@ def _prepare_image(
 
 
 def _prepare_for_jpeg(image: Image.Image) -> Image.Image:
-    """Pretvara sliku u RGB i uklanja transparentnost."""
     if _has_transparency(image):
         rgba_image = image.convert("RGBA")
-
         white_background = Image.new(
             mode="RGB",
             size=rgba_image.size,
             color=(255, 255, 255),
         )
-
         white_background.paste(
             rgba_image,
             mask=rgba_image.getchannel("A"),
         )
-
+        rgba_image.close()
         return white_background
 
     return image.convert("RGB")
 
 
 def _has_transparency(image: Image.Image) -> bool:
-    """Provjerava sadrži li slika transparentne piksele."""
     if image.mode in {"RGBA", "LA"}:
         return True
 
@@ -208,7 +205,6 @@ def _save_image(
     output_format: str,
     quality: int,
 ) -> None:
-    """Sprema pripremljenu sliku u traženom formatu."""
     if output_format == "JPG":
         image.save(
             output_path,
@@ -235,8 +231,8 @@ def _save_image(
         )
         return
 
-    raise ImageConversionError(
-        f"Spremanje formata {output_format} nije podržano."
+    raise UnsupportedFormatError(
+        f"Spremanje formata {output_format} nije podrzano."
     )
 
 

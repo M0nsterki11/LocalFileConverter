@@ -1,4 +1,6 @@
+import logging
 import shutil
+import time
 from pathlib import Path
 from threading import Event
 
@@ -13,6 +15,12 @@ from app.settings import (
 from converters.base_converter import (
     ConversionCancelledError,
     check_cancelled,
+)
+from utils.error_handler import exception_to_error_info
+from utils.logging_utils import (
+    LOGGER_NAME,
+    log_exception_safely,
+    sanitize_path,
 )
 
 
@@ -63,7 +71,9 @@ class ConversionWorker(QObject):
 
     @Slot()
     def run(self) -> None:
+        logger = logging.getLogger(LOGGER_NAME)
         result_path: Path | None = None
+        started_at = time.monotonic()
 
         try:
             check_cancelled(self.is_cancelled)
@@ -84,16 +94,34 @@ class ConversionWorker(QObject):
 
             check_cancelled(self.is_cancelled)
 
+            logger.info(
+                "Worker conversion finished input=%s result=%s duration=%.2fs",
+                sanitize_path(self.input_file),
+                sanitize_path(result_path),
+                time.monotonic() - started_at,
+            )
             self.conversion_finished.emit(str(result_path))
 
         except ConversionCancelledError as error:
             if result_path is not None:
                 self._remove_cancelled_result(result_path)
 
+            logger.info(
+                "Worker conversion cancelled input=%s duration=%.2fs",
+                sanitize_path(self.input_file),
+                time.monotonic() - started_at,
+            )
             self.conversion_cancelled.emit(str(error))
 
         except Exception as error:
-            self.conversion_failed.emit(str(error))
+            error_info = exception_to_error_info(error)
+            log_exception_safely(
+                logger,
+                "Worker conversion failed input=%s duration=%.2fs",
+                sanitize_path(self.input_file),
+                time.monotonic() - started_at,
+            )
+            self.conversion_failed.emit(error_info.message)
 
     @staticmethod
     def _remove_cancelled_result(

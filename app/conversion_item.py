@@ -16,6 +16,7 @@ from utils.format_utils import (
     get_display_format,
     is_supported_file,
 )
+from utils.input_validation import validate_input_file_for_queue
 
 
 class ConversionStatus(Enum):
@@ -147,6 +148,12 @@ def build_unique_supported_items(
 
     for file_path in file_paths:
         path = Path(file_path)
+
+        try:
+            validate_input_file_for_queue(path)
+        except Exception:
+            unsupported_paths.append(path)
+            continue
 
         if not is_supported_file(path):
             unsupported_paths.append(path)

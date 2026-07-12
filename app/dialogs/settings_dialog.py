@@ -45,6 +45,7 @@ from utils.libreoffice_utils import (
     get_default_libreoffice_browse_directory,
     is_valid_libreoffice_executable,
 )
+from utils.logging_utils import open_log_directory
 
 
 class SettingsDialog(QDialog):
@@ -124,6 +125,8 @@ class SettingsDialog(QDialog):
             "Prikaži završni sažetak grupne konverzije"
         )
 
+        self.open_logs_button = QPushButton("Otvori mapu s logovima")
+
         layout.addWidget(QLabel("Tema:"), 0, 0)
         layout.addWidget(self.theme_combo, 0, 1, 1, 2)
         layout.addWidget(QLabel("Zadana izlazna mapa:"), 1, 0)
@@ -131,6 +134,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.select_output_button, 1, 2)
         layout.addWidget(self.open_output_checkbox, 2, 1, 1, 2)
         layout.addWidget(self.summary_checkbox, 3, 1, 1, 2)
+        layout.addWidget(self.open_logs_button, 4, 1, 1, 2)
         layout.setColumnStretch(1, 1)
 
         return widget
@@ -272,6 +276,7 @@ class SettingsDialog(QDialog):
         self.reset_button.clicked.connect(self._reset_defaults)
         self.save_button.clicked.connect(self._save)
         self.cancel_button.clicked.connect(self.reject)
+        self.open_logs_button.clicked.connect(open_log_directory)
 
     def _load_settings(
         self,

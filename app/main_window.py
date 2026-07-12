@@ -1,6 +1,7 @@
 from pathlib import Path
+import time
 
-from PySide6.QtCore import QPoint, QThread, Qt
+from PySide6.QtCore import QPoint, QThread, QTimer, Qt
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
@@ -34,6 +35,7 @@ from app.conversion_item import (
     build_unique_supported_items,
 )
 from app.dialogs.about_dialog import AboutDialog
+from app.dialogs.error_dialog import ErrorDetailsDialog
 from app.dialogs.merge_images_dialog import MergeImagesDialog
 from app.dialogs.settings_dialog import SettingsDialog
 from app.icon_provider import get_app_icon, get_icon
@@ -54,12 +56,14 @@ from app.widgets.conversion_queue_widget import ConversionQueueWidget
 from utils.file_utils import (
     open_directory,
 )
+from utils.error_handler import exception_to_error_info
 from utils.format_utils import get_file_extension
 from utils.libreoffice_utils import (
     find_libreoffice,
     get_default_libreoffice_browse_directory,
     is_valid_libreoffice_executable,
 )
+from utils.output_safety import ensure_output_directory_ready
 
 
 class MainWindow(QMainWindow):
@@ -97,6 +101,8 @@ class MainWindow(QMainWindow):
         self.cancel_requested = False
         self._loading_item_controls = False
         self._batch_item_ids: list[str] = []
+        self._batch_started_at: float | None = None
+        self._closing_after_cancel = False
 
         self.setWindowTitle(APP_NAME)
         app_icon = get_app_icon()
@@ -1299,19 +1305,12 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            self.output_directory.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-        except OSError as error:
-            QMessageBox.critical(
-                self,
-                "Greska izlazne mape",
-                (
-                    "Nije moguce stvoriti izlaznu mapu:\n"
-                    f"{error}"
-                ),
-            )
+            ensure_output_directory_ready(self.output_directory)
+        except Exception as error:
+            ErrorDetailsDialog(
+                exception_to_error_info(error),
+                parent=self,
+            ).exec()
             return
 
         for item in runnable_items:
@@ -1319,6 +1318,7 @@ class MainWindow(QMainWindow):
             self.queue_widget.update_item(item)
 
         self.cancel_requested = False
+        self._batch_started_at = time.monotonic()
         self._batch_item_ids = [
             item.unique_id
             for item in runnable_items
@@ -1505,15 +1505,24 @@ class MainWindow(QMainWindow):
         cancelled_count: int,
     ) -> None:
         self.cancel_requested = False
+        duration_seconds = (
+            time.monotonic() - self._batch_started_at
+            if self._batch_started_at is not None
+            else 0.0
+        )
         self.progress_bar.setValue(100)
         self.status_label.setText(
             "Konverzija zavrsena:\n"
             f"- Uspjesno: {success_count}\n"
             f"- Neuspjesno: {failed_count}\n"
-            f"- Prekinuto: {cancelled_count}"
+            f"- Prekinuto: {cancelled_count}\n"
+            f"- Trajanje: {duration_seconds:.1f} s"
         )
 
-        if self.app_settings.show_batch_summary:
+        if (
+            self.app_settings.show_batch_summary
+            and not self._closing_after_cancel
+        ):
             QMessageBox.information(
                 self,
                 "Sažetak konverzije",
@@ -1528,6 +1537,7 @@ class MainWindow(QMainWindow):
         if (
             self.app_settings.open_output_after_success
             and success_count > 0
+            and not self._closing_after_cancel
         ):
             self._open_output_directory()
 
@@ -1538,7 +1548,12 @@ class MainWindow(QMainWindow):
         self.batch_worker = None
         self.batch_thread = None
         self._batch_item_ids = []
+        self._batch_started_at = None
         self._set_conversion_running(False)
+
+        if self._closing_after_cancel:
+            self._closing_after_cancel = False
+            QTimer.singleShot(0, self.close)
 
     def _set_conversion_running(
         self,
@@ -1645,14 +1660,30 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         if self.is_converting:
-            QMessageBox.information(
-                self,
-                "Konverzija je u tijeku",
-                (
-                    "Pricekaj da trenutna konverzija zavrsi "
-                    "ili je sigurno prekini."
-                ),
+            message_box = QMessageBox(self)
+            message_box.setIcon(QMessageBox.Icon.Question)
+            message_box.setWindowTitle("Konverzija je u tijeku")
+            message_box.setText(
+                "Konverzija je u tijeku. Zelis li je prekinuti i zatvoriti aplikaciju?"
             )
+            continue_button = message_box.addButton(
+                "Nastavi konverziju",
+                QMessageBox.ButtonRole.RejectRole,
+            )
+            stop_button = message_box.addButton(
+                "Prekini i zatvori",
+                QMessageBox.ButtonRole.DestructiveRole,
+            )
+            message_box.setDefaultButton(continue_button)
+            message_box.exec()
+
+            if message_box.clickedButton() == stop_button:
+                self._closing_after_cancel = True
+                self.status_label.setText(
+                    "Status: Prekid konverzije i zatvaranje aplikacije..."
+                )
+                self._cancel_conversion()
+
             event.ignore()
             return
 

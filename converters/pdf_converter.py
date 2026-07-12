@@ -1,4 +1,5 @@
-import shutil
+from __future__ import annotations
+
 from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,15 +9,29 @@ import pymupdf
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.constants import IMAGE_EXTENSIONS
-from utils.file_utils import (
-    generate_unique_output_directory,
-    generate_unique_output_path,
-)
-
+from app.exceptions import ConversionError, UnsupportedFormatError
 from converters.base_converter import (
     CancelCheck,
     ConversionCancelledError,
     check_cancelled,
+)
+from utils.file_utils import (
+    generate_unique_output_directory,
+    generate_unique_output_path,
+)
+from utils.input_validation import (
+    validate_image_file,
+    validate_pdf_file,
+)
+from utils.output_safety import (
+    cleanup_temporary_path,
+    ensure_output_directory_ready,
+    ensure_sufficient_disk_space,
+    estimate_required_space_bytes,
+    get_temporary_output_path,
+    publish_temporary_directory,
+    publish_temporary_file,
+    validate_zip_file,
 )
 
 
@@ -24,8 +39,8 @@ ProgressCallback = Callable[[int], None]
 StatusCallback = Callable[[str], None]
 
 
-class PdfConversionError(Exception):
-    """Greška nastala tijekom PDF konverzije."""
+class PdfConversionError(ConversionError):
+    """Error raised while converting PDF files."""
 
 
 PDF_IMAGE_FORMATS = {
@@ -38,7 +53,6 @@ MULTI_PAGE_OUTPUT_MODES = {
     "zip",
 }
 
-# Približno 100 MB prema Windows načinu prikaza veličine.
 AUTO_ZIP_THRESHOLD_BYTES = 100 * 1024 * 1024
 
 
@@ -54,53 +68,23 @@ def convert_pdf_to_images(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
-    """
-    Pretvara PDF stranice u PNG ili JPG.
-
-    Jedna stranica:
-        Vraća jednu slikovnu datoteku.
-
-    Više stranica:
-        - folder: sprema slike u običnu mapu
-        - zip: sprema slike u ZIP arhivu
-
-    Ako izlazne slike prijeđu 100 MB, rezultat se automatski
-    sprema kao ZIP čak i kada je odabrana obična mapa.
-    """
-    input_path = Path(input_file)
-    output_path = Path(output_directory)
+    input_path = validate_pdf_file(input_file)
+    output_path = ensure_output_directory_ready(output_directory)
     normalized_format = output_format.upper()
     normalized_output_mode = multi_page_output_mode.lower().strip()
 
-    if not input_path.exists() or not input_path.is_file():
-        raise PdfConversionError(
-            "Odabrana PDF datoteka ne postoji."
-        )
-
-    if input_path.suffix.lower() != ".pdf":
-        raise PdfConversionError(
-            "Odabrana datoteka nije PDF."
-        )
-
     if normalized_format not in PDF_IMAGE_FORMATS:
-        raise PdfConversionError(
-            f"PDF nije moguće pretvoriti u {normalized_format}."
+        raise UnsupportedFormatError(
+            f"PDF nije moguce pretvoriti u {normalized_format}."
         )
 
     if normalized_output_mode not in MULTI_PAGE_OUTPUT_MODES:
         raise PdfConversionError(
-            "Nepoznat način spremanja više PDF stranica."
+            "Nepoznat nacin spremanja vise PDF stranica."
         )
 
     dpi = max(72, min(600, int(dpi)))
     quality = max(1, min(100, int(quality)))
-
-    try:
-        output_path.mkdir(parents=True, exist_ok=True)
-    except OSError as error:
-        raise PdfConversionError(
-            f"Nije moguće stvoriti izlaznu mapu:\n{error}"
-        ) from error
 
     _emit_status(status_callback, "Otvaranje PDF dokumenta...")
     _emit_progress(progress_callback, 5)
@@ -112,7 +96,7 @@ def convert_pdf_to_images(
 
             if document.needs_pass:
                 raise PdfConversionError(
-                    "PDF je zaključan lozinkom."
+                    "PDF je zakljucan lozinkom."
                 )
 
             if document.page_count == 0:
@@ -120,11 +104,21 @@ def convert_pdf_to_images(
                     "PDF dokument nema nijednu stranicu."
                 )
 
+            ensure_sufficient_disk_space(
+                output_path,
+                estimate_required_space_bytes(
+                    input_path,
+                    operation="pdf_to_images",
+                    output_format=normalized_format,
+                    dpi=dpi,
+                    page_count=document.page_count,
+                ),
+            )
+
             page_indexes = parse_page_selection(
                 selection=page_selection,
                 page_count=document.page_count,
             )
-
             _emit_progress(progress_callback, 10)
 
             if len(page_indexes) == 1:
@@ -136,6 +130,7 @@ def convert_pdf_to_images(
                     output_format=normalized_format,
                     dpi=dpi,
                     quality=quality,
+                    cancel_check=cancel_check,
                     progress_callback=progress_callback,
                     status_callback=status_callback,
                 )
@@ -156,10 +151,9 @@ def convert_pdf_to_images(
 
     except PdfConversionError:
         raise
-
     except (RuntimeError, ValueError, OSError) as error:
         raise PdfConversionError(
-            f"PDF se nije mogao obraditi:\n{error}"
+            f"PDF se nije mogao obraditi: {error}"
         ) from error
 
 
@@ -169,32 +163,28 @@ def convert_image_to_pdf(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
-    """Pretvara jednu JPG, PNG ili WEBP sliku u PDF."""
-    input_path = Path(input_file)
-    output_path = Path(output_directory)
-
-    if not input_path.exists() or not input_path.is_file():
-        raise PdfConversionError(
-            "Odabrana slika ne postoji."
-        )
+    input_path = validate_image_file(input_file)
+    output_path = ensure_output_directory_ready(output_directory)
 
     if input_path.suffix.lower() not in IMAGE_EXTENSIONS:
-        raise PdfConversionError(
-            "Odabrani format slike nije podržan."
+        raise UnsupportedFormatError(
+            "Odabrani format slike nije podrzan."
         )
 
-    try:
-        output_path.mkdir(parents=True, exist_ok=True)
-    except OSError as error:
-        raise PdfConversionError(
-            f"Nije moguće stvoriti izlaznu mapu:\n{error}"
-        ) from error
+    ensure_sufficient_disk_space(
+        output_path,
+        estimate_required_space_bytes(
+            input_path,
+            operation="image_to_pdf",
+        ),
+    )
 
     result_path = generate_unique_output_path(
         input_file=input_path,
         output_directory=output_path,
         output_extension=".pdf",
     )
+    temporary_path = get_temporary_output_path(result_path)
 
     try:
         _emit_status(status_callback, "Otvaranje slike...")
@@ -202,13 +192,9 @@ def convert_image_to_pdf(
 
         with Image.open(input_path) as source_image:
             source_image.load()
-
             image = ImageOps.exif_transpose(source_image)
 
-            _emit_status(
-                status_callback,
-                "Priprema slike za PDF...",
-            )
+            _emit_status(status_callback, "Priprema slike za PDF...")
             _emit_progress(progress_callback, 45)
 
             prepared_image = _prepare_image_for_pdf(image)
@@ -217,40 +203,42 @@ def convert_image_to_pdf(
             _emit_progress(progress_callback, 75)
 
             prepared_image.save(
-                result_path,
+                temporary_path,
                 format="PDF",
                 resolution=300.0,
             )
-
             prepared_image.close()
 
-        if not result_path.exists():
-            raise PdfConversionError(
-                "PDF nije pronađen nakon konverzije."
-            )
+        result_path = publish_temporary_file(
+            temporary_path,
+            result_path,
+        )
 
         _emit_progress(progress_callback, 100)
-        _emit_status(status_callback, "Konverzija je završena.")
-
+        _emit_status(status_callback, "Konverzija je zavrsena.")
         return result_path
 
     except UnidentifiedImageError as error:
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
-            "Datoteka nije valjana slika ili je oštećena."
+            "Datoteka nije valjana slika ili je ostecena."
         ) from error
-
     except PermissionError as error:
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
-            "Nema dozvole za čitanje ili spremanje datoteke."
+            "Nema dozvole za citanje ili spremanje datoteke."
         ) from error
-
     except PdfConversionError:
+        cleanup_temporary_path(temporary_path)
         raise
-
     except OSError as error:
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
-            f"Slika se nije mogla pretvoriti u PDF:\n{error}"
+            f"Slika se nije mogla pretvoriti u PDF: {error}"
         ) from error
+    except Exception:
+        cleanup_temporary_path(temporary_path)
+        raise
 
 
 def convert_images_to_pdf(
@@ -261,37 +249,21 @@ def convert_images_to_pdf(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
-    """Spaja vise slika u jedan PDF bez mijenjanja originala."""
-    input_paths = [Path(input_file) for input_file in input_files]
-    output_path = Path(output_directory)
-
-    if len(input_paths) < 2:
+    if len(input_files) < 2:
         raise PdfConversionError(
             "Odaberi najmanje dvije slike za zajednicki PDF."
         )
 
-    for input_path in input_paths:
-        if not input_path.exists() or not input_path.is_file():
-            raise PdfConversionError(
-                f"Slika ne postoji:\n{input_path}"
-            )
-
-        if input_path.suffix.lower() not in IMAGE_EXTENSIONS:
-            raise PdfConversionError(
-                f"Format nije podrzana slika:\n{input_path.name}"
-            )
-
-    try:
-        output_path.mkdir(parents=True, exist_ok=True)
-    except OSError as error:
-        raise PdfConversionError(
-            f"Nije moguce stvoriti izlaznu mapu:\n{error}"
-        ) from error
-
-    requested_name = Path(output_filename).name.strip()
-
-    if not requested_name:
-        requested_name = "combined.pdf"
+    input_paths = [validate_image_file(path) for path in input_files]
+    output_path = ensure_output_directory_ready(output_directory)
+    ensure_sufficient_disk_space(
+        output_path,
+        estimate_required_space_bytes(
+            input_paths,
+            operation="images_to_pdf",
+        ),
+    )
+    requested_name = Path(output_filename).name.strip() or "combined.pdf"
 
     if Path(requested_name).suffix.lower() != ".pdf":
         requested_name = f"{requested_name}.pdf"
@@ -301,18 +273,14 @@ def convert_images_to_pdf(
         output_directory=output_path,
         output_extension=".pdf",
     )
-
+    temporary_path = get_temporary_output_path(result_path)
     prepared_images: list[Image.Image] = []
 
     try:
         total_images = len(input_paths)
 
-        for position, input_path in enumerate(
-            input_paths,
-            start=1,
-        ):
+        for position, input_path in enumerate(input_paths, start=1):
             check_cancelled(cancel_check)
-
             _emit_status(
                 status_callback,
                 (
@@ -342,7 +310,7 @@ def convert_images_to_pdf(
         first_image = prepared_images[0]
         remaining_images = prepared_images[1:]
         first_image.save(
-            result_path,
+            temporary_path,
             format="PDF",
             save_all=True,
             append_images=remaining_images,
@@ -350,46 +318,42 @@ def convert_images_to_pdf(
         )
 
         check_cancelled(cancel_check)
-
-        if not result_path.exists():
-            raise PdfConversionError(
-                "PDF nije pronaden nakon spajanja slika."
-            )
+        result_path = publish_temporary_file(
+            temporary_path,
+            result_path,
+        )
 
         _emit_progress(progress_callback, 100)
         _emit_status(
             status_callback,
             "Slike su uspjesno spojene u PDF.",
         )
-
         return result_path
 
     except ConversionCancelledError:
-        result_path.unlink(missing_ok=True)
+        cleanup_temporary_path(temporary_path)
         raise
-
     except UnidentifiedImageError as error:
-        result_path.unlink(missing_ok=True)
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
             "Jedna od datoteka nije valjana slika ili je ostecena."
         ) from error
-
     except PermissionError as error:
-        result_path.unlink(missing_ok=True)
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
             "Nema dozvole za citanje ili spremanje datoteke."
         ) from error
-
     except PdfConversionError:
-        result_path.unlink(missing_ok=True)
+        cleanup_temporary_path(temporary_path)
         raise
-
     except OSError as error:
-        result_path.unlink(missing_ok=True)
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
-            f"Slike se nisu mogle spojiti u PDF:\n{error}"
+            f"Slike se nisu mogle spojiti u PDF: {error}"
         ) from error
-
+    except Exception:
+        cleanup_temporary_path(temporary_path)
+        raise
     finally:
         for image in prepared_images:
             image.close()
@@ -399,12 +363,6 @@ def parse_page_selection(
     selection: str | None,
     page_count: int,
 ) -> list[int]:
-    """
-    Pretvara korisnički unos u indekse PDF stranica.
-
-    Primjer:
-    1,3-5 -> [0, 2, 3, 4]
-    """
     if page_count <= 0:
         raise PdfConversionError(
             "PDF nema dostupnih stranica."
@@ -442,12 +400,11 @@ def parse_page_selection(
 
             if start_page > end_page:
                 raise PdfConversionError(
-                    f"Početak raspona mora biti manji od kraja: {part}"
+                    f"Pocetak raspona mora biti manji od kraja: {part}"
                 )
 
             for page_number in range(start_page, end_page + 1):
                 _validate_page_number(page_number, page_count)
-
                 page_index = page_number - 1
 
                 if page_index not in selected_pages:
@@ -461,7 +418,6 @@ def parse_page_selection(
 
             page_number = int(part)
             _validate_page_number(page_number, page_count)
-
             page_index = page_number - 1
 
             if page_index not in selected_pages:
@@ -483,24 +439,26 @@ def _convert_single_pdf_page(
     output_format: str,
     dpi: int,
     quality: int,
+    cancel_check: CancelCheck | None,
     progress_callback: ProgressCallback | None,
     status_callback: StatusCallback | None,
 ) -> Path:
     page_number = page_index + 1
     extension = PDF_IMAGE_FORMATS[output_format]
-
     result_path = generate_unique_output_path(
         input_file=input_path,
         output_directory=output_directory,
         output_extension=extension,
         name_suffix=f"_page_{page_number}",
     )
+    temporary_path = get_temporary_output_path(result_path)
 
     _emit_status(
         status_callback,
         f"Pretvaranje stranice {page_number}...",
     )
     _emit_progress(progress_callback, 35)
+    check_cancelled(cancel_check)
 
     image = _render_pdf_page(
         document=document,
@@ -510,19 +468,25 @@ def _convert_single_pdf_page(
 
     try:
         _emit_progress(progress_callback, 70)
-
         _save_rendered_page(
             image=image,
-            output_path=result_path,
+            output_path=temporary_path,
             output_format=output_format,
             quality=quality,
         )
+        check_cancelled(cancel_check)
+        result_path = publish_temporary_file(
+            temporary_path,
+            result_path,
+        )
+    except Exception:
+        cleanup_temporary_path(temporary_path)
+        raise
     finally:
         image.close()
 
     _emit_progress(progress_callback, 100)
-    _emit_status(status_callback, "Konverzija je završena.")
-
+    _emit_status(status_callback, "Konverzija je zavrsena.")
     return result_path
 
 
@@ -540,24 +504,17 @@ def _convert_multiple_pdf_pages(
     cancel_check: CancelCheck | None,
 ) -> Path:
     extension = PDF_IMAGE_FORMATS[output_format]
-
-    number_width = max(
-        2,
-        len(str(document.page_count)),
-    )
+    number_width = max(2, len(str(document.page_count)))
 
     with TemporaryDirectory(
-        prefix="local_file_converter_"
+        prefix="lfc_pdf_pages_",
+        ignore_cleanup_errors=True,
     ) as temporary_directory:
         temporary_path = Path(temporary_directory)
         rendered_paths: list[Path] = []
-
         total_pages = len(page_indexes)
 
-        for position, page_index in enumerate(
-            page_indexes,
-            start=1,
-        ):
+        for position, page_index in enumerate(page_indexes, start=1):
             check_cancelled(cancel_check)
             page_number = page_index + 1
 
@@ -574,13 +531,11 @@ def _convert_multiple_pdf_pages(
                 page_index=page_index,
                 dpi=dpi,
             )
-
             page_filename = (
                 f"{input_path.stem}_page_"
                 f"{page_number:0{number_width}d}"
                 f"{extension}"
             )
-
             rendered_path = temporary_path / page_filename
 
             try:
@@ -596,32 +551,23 @@ def _convert_multiple_pdf_pages(
             rendered_paths.append(rendered_path)
             check_cancelled(cancel_check)
 
-            progress = 10 + int(
-                (position / total_pages) * 75
-            )
+            progress = 10 + int((position / total_pages) * 75)
             _emit_progress(progress_callback, progress)
 
-        total_size_bytes = sum(
-            path.stat().st_size
-            for path in rendered_paths
-        )
-
+        total_size_bytes = sum(path.stat().st_size for path in rendered_paths)
         automatic_zip = (
             multi_page_output_mode == "folder"
             and total_size_bytes > AUTO_ZIP_THRESHOLD_BYTES
         )
-
         should_create_zip = (
             multi_page_output_mode == "zip"
             or automatic_zip
         )
-
         check_cancelled(cancel_check)
 
         if should_create_zip:
             if automatic_zip:
                 size_mb = total_size_bytes / (1024 * 1024)
-
                 _emit_status(
                     status_callback,
                     (
@@ -636,49 +582,44 @@ def _convert_multiple_pdf_pages(
                 )
 
             _emit_progress(progress_callback, 90)
-
             zip_path = _create_zip_result(
                 input_path=input_path,
                 output_directory=output_directory,
                 rendered_paths=rendered_paths,
             )
-
             _emit_progress(progress_callback, 100)
 
             if automatic_zip:
                 _emit_status(
                     status_callback,
                     (
-                        "Konverzija je završena. Rezultat je "
-                        "automatski ZIP-an jer je prešao 100 MB."
+                        "Konverzija je zavrsena. Rezultat je "
+                        "automatski ZIP-an jer je presao 100 MB."
                     ),
                 )
             else:
                 _emit_status(
                     status_callback,
-                    "Konverzija i ZIP pakiranje su završeni.",
+                    "Konverzija i ZIP pakiranje su zavrseni.",
                 )
 
             return zip_path
 
         _emit_status(
             status_callback,
-            "Spremanje slika u običnu mapu...",
+            "Spremanje slika u obicnu mapu...",
         )
         _emit_progress(progress_callback, 90)
-
         result_directory = _create_folder_result(
             input_path=input_path,
             output_directory=output_directory,
             rendered_paths=rendered_paths,
         )
-
         _emit_progress(progress_callback, 100)
         _emit_status(
             status_callback,
-            "Konverzija je završena i slike su spremljene u mapu.",
+            "Konverzija je zavrsena i slike su spremljene u mapu.",
         )
-
         return result_directory
 
 
@@ -693,34 +634,30 @@ def _create_folder_result(
         name_suffix="_pages",
     )
 
-    try:
-        result_directory.mkdir(
-            parents=True,
-            exist_ok=False,
-        )
+    with TemporaryDirectory(
+        prefix="lfc_result_pages_",
+        dir=output_directory,
+        ignore_cleanup_errors=True,
+    ) as temporary_directory:
+        temporary_path = Path(temporary_directory)
 
-        for rendered_path in rendered_paths:
-            destination_path = (
-                result_directory
-                / rendered_path.name
+        try:
+            for rendered_path in rendered_paths:
+                destination_path = temporary_path / rendered_path.name
+                rendered_path.rename(destination_path)
+
+            return publish_temporary_directory(
+                temporary_path,
+                result_directory,
             )
-
-            shutil.move(
-                str(rendered_path),
-                str(destination_path),
-            )
-
-    except OSError as error:
-        shutil.rmtree(
-            result_directory,
-            ignore_errors=True,
-        )
-
-        raise PdfConversionError(
-            f"Nije moguće spremiti izlaznu mapu:\n{error}"
-        ) from error
-
-    return result_directory
+        except OSError as error:
+            cleanup_temporary_path(temporary_path)
+            raise PdfConversionError(
+                f"Nije moguce spremiti izlaznu mapu: {error}"
+            ) from error
+        except Exception:
+            cleanup_temporary_path(temporary_path)
+            raise
 
 
 def _create_zip_result(
@@ -734,10 +671,11 @@ def _create_zip_result(
         output_extension=".zip",
         name_suffix="_pages",
     )
+    temporary_path = get_temporary_output_path(zip_path)
 
     try:
         with ZipFile(
-            zip_path,
+            temporary_path,
             mode="w",
             compression=ZIP_DEFLATED,
         ) as archive:
@@ -747,19 +685,17 @@ def _create_zip_result(
                     arcname=rendered_path.name,
                 )
 
+        validate_zip_file(temporary_path)
+        return publish_temporary_file(temporary_path, zip_path)
+
     except OSError as error:
-        zip_path.unlink(missing_ok=True)
-
+        cleanup_temporary_path(temporary_path)
         raise PdfConversionError(
-            f"Nije moguće napraviti ZIP arhivu:\n{error}"
+            f"Nije moguce napraviti ZIP arhivu: {error}"
         ) from error
-
-    if not zip_path.exists():
-        raise PdfConversionError(
-            "ZIP arhiva nije pronađena nakon konverzije."
-        )
-
-    return zip_path
+    except Exception:
+        cleanup_temporary_path(temporary_path)
+        raise
 
 
 def _render_pdf_page(
@@ -768,16 +704,13 @@ def _render_pdf_page(
     dpi: int,
 ) -> Image.Image:
     page = document.load_page(page_index)
-
     zoom = dpi / 72.0
     matrix = pymupdf.Matrix(zoom, zoom)
-
     pixmap = page.get_pixmap(
         matrix=matrix,
         colorspace=pymupdf.csRGB,
         alpha=False,
     )
-
     return Image.frombytes(
         "RGB",
         (pixmap.width, pixmap.height),
@@ -808,26 +741,23 @@ def _save_rendered_page(
         )
         return
 
-    raise PdfConversionError(
-        f"Nepodržani izlazni format: {output_format}"
+    raise UnsupportedFormatError(
+        f"Nepodrzani izlazni format: {output_format}"
     )
 
 
 def _prepare_image_for_pdf(image: Image.Image) -> Image.Image:
     if _has_transparency(image):
         rgba_image = image.convert("RGBA")
-
         white_background = Image.new(
             mode="RGB",
             size=rgba_image.size,
             color=(255, 255, 255),
         )
-
         white_background.paste(
             rgba_image,
             mask=rgba_image.getchannel("A"),
         )
-
         rgba_image.close()
         return white_background
 
