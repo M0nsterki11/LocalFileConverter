@@ -142,3 +142,32 @@ QProgressBar::chunk {
     background-color: #2878d0;
     border-radius: 6px;
 }
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: #f4f6f8;
+}
+
+QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #b8c2cc;
+    border-radius: 7px;
+    padding: 7px 10px;
+}
+
+QLineEdit:hover {
+    border-color: #2878d0;
+}
+
+QLineEdit:focus {
+    border: 1px solid #2878d0;
+}
+
+QLineEdit:disabled {
+    background-color: #e5e9ed;
+    color: #9aa5af;
+}
