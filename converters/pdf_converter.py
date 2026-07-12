@@ -15,6 +15,7 @@ from utils.file_utils import (
 
 from converters.base_converter import (
     CancelCheck,
+    ConversionCancelledError,
     check_cancelled,
 )
 
@@ -250,6 +251,148 @@ def convert_image_to_pdf(
         raise PdfConversionError(
             f"Slika se nije mogla pretvoriti u PDF:\n{error}"
         ) from error
+
+
+def convert_images_to_pdf(
+    input_files: list[str | Path],
+    output_directory: str | Path,
+    output_filename: str = "combined.pdf",
+    cancel_check: CancelCheck | None = None,
+    progress_callback: ProgressCallback | None = None,
+    status_callback: StatusCallback | None = None,
+) -> Path:
+    """Spaja vise slika u jedan PDF bez mijenjanja originala."""
+    input_paths = [Path(input_file) for input_file in input_files]
+    output_path = Path(output_directory)
+
+    if len(input_paths) < 2:
+        raise PdfConversionError(
+            "Odaberi najmanje dvije slike za zajednicki PDF."
+        )
+
+    for input_path in input_paths:
+        if not input_path.exists() or not input_path.is_file():
+            raise PdfConversionError(
+                f"Slika ne postoji:\n{input_path}"
+            )
+
+        if input_path.suffix.lower() not in IMAGE_EXTENSIONS:
+            raise PdfConversionError(
+                f"Format nije podrzana slika:\n{input_path.name}"
+            )
+
+    try:
+        output_path.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        raise PdfConversionError(
+            f"Nije moguce stvoriti izlaznu mapu:\n{error}"
+        ) from error
+
+    requested_name = Path(output_filename).name.strip()
+
+    if not requested_name:
+        requested_name = "combined.pdf"
+
+    if Path(requested_name).suffix.lower() != ".pdf":
+        requested_name = f"{requested_name}.pdf"
+
+    result_path = generate_unique_output_path(
+        input_file=Path(requested_name),
+        output_directory=output_path,
+        output_extension=".pdf",
+    )
+
+    prepared_images: list[Image.Image] = []
+
+    try:
+        total_images = len(input_paths)
+
+        for position, input_path in enumerate(
+            input_paths,
+            start=1,
+        ):
+            check_cancelled(cancel_check)
+
+            _emit_status(
+                status_callback,
+                (
+                    f"Priprema slike {position} od "
+                    f"{total_images}: {input_path.name}"
+                ),
+            )
+
+            with Image.open(input_path) as source_image:
+                source_image.load()
+                image = ImageOps.exif_transpose(source_image)
+                prepared_images.append(
+                    _prepare_image_for_pdf(image)
+                )
+
+            progress = int((position / total_images) * 85)
+            _emit_progress(progress_callback, progress)
+
+        check_cancelled(cancel_check)
+
+        _emit_status(
+            status_callback,
+            f"Spremanje PDF-a {result_path.name}...",
+        )
+        _emit_progress(progress_callback, 90)
+
+        first_image = prepared_images[0]
+        remaining_images = prepared_images[1:]
+        first_image.save(
+            result_path,
+            format="PDF",
+            save_all=True,
+            append_images=remaining_images,
+            resolution=300.0,
+        )
+
+        check_cancelled(cancel_check)
+
+        if not result_path.exists():
+            raise PdfConversionError(
+                "PDF nije pronaden nakon spajanja slika."
+            )
+
+        _emit_progress(progress_callback, 100)
+        _emit_status(
+            status_callback,
+            "Slike su uspjesno spojene u PDF.",
+        )
+
+        return result_path
+
+    except ConversionCancelledError:
+        result_path.unlink(missing_ok=True)
+        raise
+
+    except UnidentifiedImageError as error:
+        result_path.unlink(missing_ok=True)
+        raise PdfConversionError(
+            "Jedna od datoteka nije valjana slika ili je ostecena."
+        ) from error
+
+    except PermissionError as error:
+        result_path.unlink(missing_ok=True)
+        raise PdfConversionError(
+            "Nema dozvole za citanje ili spremanje datoteke."
+        ) from error
+
+    except PdfConversionError:
+        result_path.unlink(missing_ok=True)
+        raise
+
+    except OSError as error:
+        result_path.unlink(missing_ok=True)
+        raise PdfConversionError(
+            f"Slike se nisu mogle spojiti u PDF:\n{error}"
+        ) from error
+
+    finally:
+        for image in prepared_images:
+            image.close()
 
 
 def parse_page_selection(

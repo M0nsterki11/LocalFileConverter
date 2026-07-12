@@ -4,21 +4,10 @@ from threading import Event
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from app.constants import (
-    IMAGE_EXTENSIONS,
-    OFFICE_EXTENSIONS,
-)
+from app.conversion_execution import run_conversion
 from converters.base_converter import (
     ConversionCancelledError,
     check_cancelled,
-)
-from converters.image_converter import convert_image
-from converters.office_converter import (
-    convert_office_to_pdf,
-)
-from converters.pdf_converter import (
-    convert_image_to_pdf,
-    convert_pdf_to_images,
 )
 
 
@@ -74,50 +63,19 @@ class ConversionWorker(QObject):
         try:
             check_cancelled(self.is_cancelled)
 
-            extension = self.input_file.suffix.lower()
-
-            if extension in IMAGE_EXTENSIONS:
-                result_path = self._convert_image_input()
-
-            elif extension == ".pdf":
-                result_path = convert_pdf_to_images(
-                    input_file=self.input_file,
-                    output_directory=self.output_directory,
-                    output_format=self.output_format,
-                    dpi=self.dpi,
-                    quality=self.quality,
-                    page_selection=self.page_selection,
-                    multi_page_output_mode=self.multi_page_output_mode,
-                    cancel_check=self.is_cancelled,
-                    progress_callback=self.progress_changed.emit,
-                    status_callback=self.status_changed.emit,
-                )
-
-            elif extension in OFFICE_EXTENSIONS:
-                if self.output_format != "PDF":
-                    raise ValueError(
-                        "Office dokumenti trenutačno se "
-                        "mogu pretvoriti samo u PDF."
-                    )
-
-                if self.libreoffice_path is None:
-                    raise ValueError(
-                        "LibreOffice putanja nije postavljena."
-                    )
-
-                result_path = convert_office_to_pdf(
-                    input_file=self.input_file,
-                    output_directory=self.output_directory,
-                    libreoffice_executable=self.libreoffice_path,
-                    cancel_check=self.is_cancelled,
-                    progress_callback=self.progress_changed.emit,
-                    status_callback=self.status_changed.emit,
-                )
-
-            else:
-                raise ValueError(
-                    "Odabrani format još nije podržan za konverziju."
-                )
+            result_path = run_conversion(
+                input_file=self.input_file,
+                output_directory=self.output_directory,
+                output_format=self.output_format,
+                quality=self.quality,
+                dpi=self.dpi,
+                page_selection=self.page_selection,
+                multi_page_output_mode=self.multi_page_output_mode,
+                libreoffice_path=self.libreoffice_path,
+                cancel_check=self.is_cancelled,
+                progress_callback=self.progress_changed.emit,
+                status_callback=self.status_changed.emit,
+            )
 
             check_cancelled(self.is_cancelled)
 
@@ -131,24 +89,6 @@ class ConversionWorker(QObject):
 
         except Exception as error:
             self.conversion_failed.emit(str(error))
-
-    def _convert_image_input(self) -> Path:
-        if self.output_format == "PDF":
-            return convert_image_to_pdf(
-                input_file=self.input_file,
-                output_directory=self.output_directory,
-                progress_callback=self.progress_changed.emit,
-                status_callback=self.status_changed.emit,
-            )
-
-        return convert_image(
-            input_file=self.input_file,
-            output_directory=self.output_directory,
-            output_format=self.output_format,
-            quality=self.quality,
-            progress_callback=self.progress_changed.emit,
-            status_callback=self.status_changed.emit,
-        )
 
     @staticmethod
     def _remove_cancelled_result(

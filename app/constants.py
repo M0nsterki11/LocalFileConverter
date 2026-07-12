@@ -1,5 +1,5 @@
 APP_NAME = "Local File Converter"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
 APP_ORGANIZATION = "LocalFileConverter"
 
 IMAGE_EXTENSIONS = {
