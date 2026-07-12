@@ -13,6 +13,11 @@ from utils.file_utils import (
     generate_unique_output_path,
 )
 
+from converters.base_converter import (
+    CancelCheck,
+    check_cancelled,
+)
+
 
 ProgressCallback = Callable[[int], None]
 StatusCallback = Callable[[str], None]
@@ -44,6 +49,7 @@ def convert_pdf_to_images(
     quality: int = 90,
     page_selection: str | None = None,
     multi_page_output_mode: str = "folder",
+    cancel_check: CancelCheck | None = None,
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
@@ -97,9 +103,12 @@ def convert_pdf_to_images(
 
     _emit_status(status_callback, "Otvaranje PDF dokumenta...")
     _emit_progress(progress_callback, 5)
+    check_cancelled(cancel_check)
 
     try:
         with pymupdf.open(input_path) as document:
+            check_cancelled(cancel_check)
+
             if document.needs_pass:
                 raise PdfConversionError(
                     "PDF je zaključan lozinkom."
@@ -141,6 +150,7 @@ def convert_pdf_to_images(
                 multi_page_output_mode=normalized_output_mode,
                 progress_callback=progress_callback,
                 status_callback=status_callback,
+                cancel_check=cancel_check,
             )
 
     except PdfConversionError:
@@ -384,6 +394,7 @@ def _convert_multiple_pdf_pages(
     multi_page_output_mode: str,
     progress_callback: ProgressCallback | None,
     status_callback: StatusCallback | None,
+    cancel_check: CancelCheck | None,
 ) -> Path:
     extension = PDF_IMAGE_FORMATS[output_format]
 
@@ -404,6 +415,7 @@ def _convert_multiple_pdf_pages(
             page_indexes,
             start=1,
         ):
+            check_cancelled(cancel_check)
             page_number = page_index + 1
 
             _emit_status(
@@ -439,6 +451,7 @@ def _convert_multiple_pdf_pages(
                 image.close()
 
             rendered_paths.append(rendered_path)
+            check_cancelled(cancel_check)
 
             progress = 10 + int(
                 (position / total_pages) * 75
@@ -459,6 +472,8 @@ def _convert_multiple_pdf_pages(
             multi_page_output_mode == "zip"
             or automatic_zip
         )
+
+        check_cancelled(cancel_check)
 
         if should_create_zip:
             if automatic_zip:

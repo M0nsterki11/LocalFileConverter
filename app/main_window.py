@@ -118,6 +118,7 @@ class MainWindow(QMainWindow):
         self.conversion_thread: QThread | None = None
         self.conversion_worker: ConversionWorker | None = None
         self.is_converting = False
+        self.cancel_requested = False
 
         self.setWindowTitle(APP_NAME)
         self.resize(900, 800)
@@ -125,6 +126,9 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self._connect_signals()
+        self.cancel_button.clicked.connect(
+            self._cancel_conversion
+        )
         self._update_output_directory_label()
         self._update_context_controls()
         self._update_controls()
@@ -415,12 +419,26 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(conversion_group)
 
         self.convert_button = QPushButton("CONVERT")
-        self.convert_button.setObjectName(
-            "convertButton"
-        )
+        self.convert_button.setObjectName("convertButton")
         self.convert_button.setMinimumHeight(50)
 
-        main_layout.addWidget(self.convert_button)
+        self.cancel_button = QPushButton("PREKINI")
+        self.cancel_button.setObjectName("cancelButton")
+        self.cancel_button.setMinimumHeight(50)
+        self.cancel_button.setEnabled(False)
+
+        action_button_layout = QHBoxLayout()
+        action_button_layout.setSpacing(12)
+        action_button_layout.addWidget(
+            self.convert_button,
+            stretch=3,
+        )
+        action_button_layout.addWidget(
+            self.cancel_button,
+            stretch=1,
+        )
+
+        main_layout.addLayout(action_button_layout)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -684,6 +702,8 @@ class MainWindow(QMainWindow):
     ) -> None:
         self.is_converting = running
 
+        self.cancel_button.setEnabled(running)
+
         self.select_file_button.setEnabled(
             not running
         )
@@ -780,10 +800,11 @@ class MainWindow(QMainWindow):
         )
 
         multi_page_output_mode = str(
-        self.multi_page_output_combo.currentData()
-        or "folder"
+            self.multi_page_output_combo.currentData()
+            or "folder"
         )
 
+        self.cancel_requested = False
         self.progress_bar.setValue(0)
         self.status_label.setText(
             "Status: Pokretanje konverzije..."
@@ -824,6 +845,10 @@ class MainWindow(QMainWindow):
             self._conversion_failed
         )
 
+        self.conversion_worker.conversion_cancelled.connect(
+            self._conversion_cancelled
+        )
+
         self.conversion_worker.conversion_finished.connect(
             self.conversion_thread.quit
         )
@@ -831,10 +856,18 @@ class MainWindow(QMainWindow):
             self.conversion_thread.quit
         )
 
+        self.conversion_worker.conversion_cancelled.connect(
+            self.conversion_thread.quit
+        )
+
         self.conversion_worker.conversion_finished.connect(
             self.conversion_worker.deleteLater
         )
         self.conversion_worker.conversion_failed.connect(
+            self.conversion_worker.deleteLater
+        )
+
+        self.conversion_worker.conversion_cancelled.connect(
             self.conversion_worker.deleteLater
         )
 
@@ -847,10 +880,27 @@ class MainWindow(QMainWindow):
 
         self.conversion_thread.start()
 
+    def _cancel_conversion(self) -> None:
+        if (
+            self.conversion_worker is None
+            or self.cancel_requested
+        ):
+            return
+
+        self.cancel_requested = True
+        self.cancel_button.setEnabled(False)
+        self.status_label.setText(
+            "Status: Prekid konverzije..."
+        )
+        self.conversion_worker.cancel()
+
     def _show_worker_status(
         self,
         message: str,
     ) -> None:
+        if self.cancel_requested:
+            return
+
         self.status_label.setText(
             f"Status: {message}"
         )
@@ -864,6 +914,7 @@ class MainWindow(QMainWindow):
             f"Status: Uspješno spremljeno:\n{result_path}"
         )
 
+        self.cancel_requested = False
         self._set_conversion_running(False)
 
     def _conversion_failed(
@@ -875,6 +926,7 @@ class MainWindow(QMainWindow):
             "Status: Konverzija nije uspjela."
         )
 
+        self.cancel_requested = False
         self._set_conversion_running(False)
 
         QMessageBox.critical(
@@ -883,7 +935,21 @@ class MainWindow(QMainWindow):
             error_message,
         )
 
+    def _conversion_cancelled(
+        self,
+        message: str,
+    ) -> None:
+        self.progress_bar.setValue(0)
+
+        self.status_label.setText(
+            f"Status: {message}"
+        )
+
+        self.cancel_requested = False
+        self._set_conversion_running(False)
+
     def _thread_finished(self) -> None:
+        self.cancel_requested = False
         self.conversion_worker = None
         self.conversion_thread = None
         self._set_conversion_running(False)

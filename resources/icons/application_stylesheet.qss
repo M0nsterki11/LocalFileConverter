@@ -171,3 +171,24 @@ QLineEdit:disabled {
     background-color: #e5e9ed;
     color: #9aa5af;
 }
+
+QPushButton#cancelButton {
+    background-color: #ffffff;
+    color: #b42318;
+    border: 1px solid #d92d20;
+    font-weight: 700;
+}
+
+QPushButton#cancelButton:hover {
+    background-color: #fff1f0;
+}
+
+QPushButton#cancelButton:pressed {
+    background-color: #fee4e2;
+}
+
+QPushButton#cancelButton:disabled {
+    background-color: #e5e9ed;
+    color: #9aa5af;
+    border-color: #d4dae0;
+}
