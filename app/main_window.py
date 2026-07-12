@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -13,11 +13,17 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSlider,
     QVBoxLayout,
     QWidget,
 )
 
-from app.constants import APP_NAME, FILE_DIALOG_FILTER
+from app.constants import (
+    APP_NAME,
+    FILE_DIALOG_FILTER,
+    IMAGE_EXTENSIONS,
+)
+from app.workers import ImageConversionWorker
 from utils.file_utils import (
     get_default_output_directory,
     open_directory,
@@ -25,6 +31,7 @@ from utils.file_utils import (
 from utils.format_utils import (
     get_available_output_formats,
     get_display_format,
+    get_file_extension,
     is_supported_file,
 )
 
@@ -99,9 +106,13 @@ class MainWindow(QMainWindow):
         self.selected_file: Path | None = None
         self.output_directory = get_default_output_directory()
 
+        self.conversion_thread: QThread | None = None
+        self.conversion_worker: ImageConversionWorker | None = None
+        self.is_converting = False
+
         self.setWindowTitle(APP_NAME)
-        self.resize(900, 720)
-        self.setMinimumSize(720, 600)
+        self.resize(900, 780)
+        self.setMinimumSize(720, 650)
 
         self._build_ui()
         self._connect_signals()
@@ -116,8 +127,7 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(32, 24, 32, 24)
         main_layout.setSpacing(18)
 
-        # Naslov
-        title_label = QLabel(APP_NAME.upper())
+        title_label = QLabel("LOCAL FILE CONVERTER")
         title_label.setObjectName("mainTitle")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -130,12 +140,10 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(title_label)
         main_layout.addWidget(subtitle_label)
 
-        # Drag-and-drop područje
         self.drop_area = DropArea()
         main_layout.addWidget(self.drop_area)
 
         self.select_file_button = QPushButton("Odaberi datoteku")
-        self.select_file_button.setObjectName("secondaryButton")
         self.select_file_button.setMinimumHeight(42)
 
         select_button_layout = QHBoxLayout()
@@ -145,7 +153,6 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(select_button_layout)
 
-        # Podaci o datoteci
         file_group = QGroupBox("Odabrana datoteka")
         file_layout = QGridLayout(file_group)
         file_layout.setHorizontalSpacing(16)
@@ -178,7 +185,6 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(file_group)
 
-        # Postavke konverzije
         conversion_group = QGroupBox("Postavke konverzije")
         conversion_layout = QGridLayout(conversion_group)
         conversion_layout.setHorizontalSpacing(16)
@@ -186,7 +192,22 @@ class MainWindow(QMainWindow):
 
         self.output_format_combo = QComboBox()
         self.output_format_combo.setMinimumHeight(38)
-        self.output_format_combo.setPlaceholderText("Odaberi izlazni format")
+        self.output_format_combo.setPlaceholderText(
+            "Odaberi izlazni format"
+        )
+
+        self.quality_slider = QSlider(Qt.Orientation.Horizontal)
+        self.quality_slider.setRange(10, 100)
+        self.quality_slider.setValue(90)
+        self.quality_slider.setSingleStep(1)
+        self.quality_slider.setPageStep(5)
+
+        self.quality_value_label = QLabel("90%")
+        self.quality_value_label.setMinimumWidth(45)
+        self.quality_value_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight
+            | Qt.AlignmentFlag.AlignVCenter
+        )
 
         self.output_directory_label = QLabel()
         self.output_directory_label.setObjectName("pathLabel")
@@ -198,39 +219,78 @@ class MainWindow(QMainWindow):
         self.select_output_button = QPushButton("Promijeni mapu")
         self.select_output_button.setMinimumHeight(38)
 
-        conversion_layout.addWidget(QLabel("Izlazni format:"), 0, 0)
-        conversion_layout.addWidget(self.output_format_combo, 0, 1, 1, 2)
+        conversion_layout.addWidget(
+            QLabel("Izlazni format:"),
+            0,
+            0,
+        )
+        conversion_layout.addWidget(
+            self.output_format_combo,
+            0,
+            1,
+            1,
+            2,
+        )
 
-        conversion_layout.addWidget(QLabel("Izlazna mapa:"), 1, 0)
-        conversion_layout.addWidget(self.output_directory_label, 1, 1)
-        conversion_layout.addWidget(self.select_output_button, 1, 2)
+        conversion_layout.addWidget(
+            QLabel("Kvaliteta:"),
+            1,
+            0,
+        )
+        conversion_layout.addWidget(
+            self.quality_slider,
+            1,
+            1,
+        )
+        conversion_layout.addWidget(
+            self.quality_value_label,
+            1,
+            2,
+        )
+
+        conversion_layout.addWidget(
+            QLabel("Izlazna mapa:"),
+            2,
+            0,
+        )
+        conversion_layout.addWidget(
+            self.output_directory_label,
+            2,
+            1,
+        )
+        conversion_layout.addWidget(
+            self.select_output_button,
+            2,
+            2,
+        )
 
         conversion_layout.setColumnStretch(1, 1)
 
         main_layout.addWidget(conversion_group)
 
-        # Convert gumb
         self.convert_button = QPushButton("CONVERT")
         self.convert_button.setObjectName("convertButton")
         self.convert_button.setMinimumHeight(50)
 
         main_layout.addWidget(self.convert_button)
 
-        # Napredak i status
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(True)
 
-        self.status_label = QLabel("Status: Odaberi datoteku za početak.")
+        self.status_label = QLabel(
+            "Status: Odaberi datoteku za početak."
+        )
         self.status_label.setObjectName("statusLabel")
         self.status_label.setWordWrap(True)
 
         main_layout.addWidget(self.progress_bar)
         main_layout.addWidget(self.status_label)
 
-        # Otvaranje izlazne mape
-        self.open_output_button = QPushButton("Otvori izlaznu mapu")
+        self.open_output_button = QPushButton(
+            "Otvori izlaznu mapu"
+        )
         self.open_output_button.setMinimumHeight(40)
 
         open_folder_layout = QHBoxLayout()
@@ -242,7 +302,9 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self) -> None:
         self.select_file_button.clicked.connect(self._select_file)
-        self.drop_area.file_dropped.connect(self._handle_selected_file)
+        self.drop_area.file_dropped.connect(
+            self._handle_selected_file
+        )
 
         self.select_output_button.clicked.connect(
             self._select_output_directory
@@ -252,10 +314,16 @@ class MainWindow(QMainWindow):
         )
 
         self.output_format_combo.currentTextChanged.connect(
-            self._update_controls
+            self._output_format_changed
         )
 
-        self.convert_button.clicked.connect(self._convert_clicked)
+        self.quality_slider.valueChanged.connect(
+            self._quality_changed
+        )
+
+        self.convert_button.clicked.connect(
+            self._start_conversion
+        )
 
     def _select_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
@@ -269,6 +337,9 @@ class MainWindow(QMainWindow):
             self._handle_selected_file(file_path)
 
     def _handle_selected_file(self, file_path: str) -> None:
+        if self.is_converting:
+            return
+
         path = Path(file_path)
 
         if not is_supported_file(path):
@@ -276,8 +347,8 @@ class MainWindow(QMainWindow):
                 self,
                 "Nepodržana datoteka",
                 (
-                    "Odabrana datoteka ne postoji ili njezin format "
-                    "trenutačno nije podržan."
+                    "Odabrana datoteka ne postoji ili njezin "
+                    "format trenutačno nije podržan."
                 ),
             )
             return
@@ -295,16 +366,21 @@ class MainWindow(QMainWindow):
         self.output_format_combo.addItems(available_formats)
         self.output_format_combo.blockSignals(False)
 
-        if available_formats:
+        self.progress_bar.setValue(0)
+
+        if path.suffix.lower() in IMAGE_EXTENSIONS:
             self.status_label.setText(
-                "Status: Datoteka je spremna za odabir konverzije."
+                "Status: Slika je spremna za konverziju."
             )
         else:
             self.status_label.setText(
-                "Status: Za ovu datoteku nema dostupnih izlaznih formata."
+                "Status: Ovaj format bit će implementiran "
+                "u jednoj od sljedećih faza."
             )
 
-        self.progress_bar.setValue(0)
+        self._output_format_changed(
+            self.output_format_combo.currentText()
+        )
         self._update_controls()
 
     def _select_output_directory(self) -> None:
@@ -319,14 +395,18 @@ class MainWindow(QMainWindow):
             self._update_output_directory_label()
 
     def _update_output_directory_label(self) -> None:
-        self.output_directory_label.setText(str(self.output_directory))
+        self.output_directory_label.setText(
+            str(self.output_directory)
+        )
 
     def _open_output_directory(self) -> None:
         try:
             opened = open_directory(self.output_directory)
 
             if not opened:
-                raise RuntimeError("Windows nije uspio otvoriti mapu.")
+                raise RuntimeError(
+                    "Windows nije uspio otvoriti mapu."
+                )
 
         except (OSError, RuntimeError) as error:
             QMessageBox.critical(
@@ -335,24 +415,187 @@ class MainWindow(QMainWindow):
                 str(error),
             )
 
+    def _quality_changed(self, value: int) -> None:
+        self.quality_value_label.setText(f"{value}%")
+
+    def _output_format_changed(self, output_format: str) -> None:
+        quality_supported = output_format in {"JPG", "WEBP"}
+
+        self.quality_slider.setEnabled(quality_supported)
+        self.quality_value_label.setEnabled(quality_supported)
+
+        if quality_supported:
+            self.quality_slider.setToolTip(
+                "Veća kvaliteta stvara veću datoteku."
+            )
+        else:
+            self.quality_slider.setToolTip(
+                "PNG koristi kompresiju bez gubitka kvalitete."
+            )
+
+        self._update_controls()
+
     def _update_controls(self) -> None:
-        conversion_ready = (
+        image_selected = (
             self.selected_file is not None
+            and get_file_extension(self.selected_file)
+            in IMAGE_EXTENSIONS
+        )
+
+        conversion_ready = (
+            image_selected
             and bool(self.output_format_combo.currentText())
+            and not self.is_converting
         )
 
         self.convert_button.setEnabled(conversion_ready)
 
-    def _convert_clicked(self) -> None:
-        if self.selected_file is None:
+    def _set_conversion_running(self, running: bool) -> None:
+        self.is_converting = running
+
+        self.select_file_button.setEnabled(not running)
+        self.drop_area.setEnabled(not running)
+        self.output_format_combo.setEnabled(not running)
+        self.select_output_button.setEnabled(not running)
+
+        quality_supported = (
+            self.output_format_combo.currentText()
+            in {"JPG", "WEBP"}
+        )
+
+        self.quality_slider.setEnabled(
+            not running and quality_supported
+        )
+        self.quality_value_label.setEnabled(
+            not running and quality_supported
+        )
+
+        self._update_controls()
+
+    def _start_conversion(self) -> None:
+        if self.selected_file is None or self.is_converting:
+            return
+
+        if get_file_extension(self.selected_file) not in IMAGE_EXTENSIONS:
+            QMessageBox.information(
+                self,
+                "Konverzija još nije dostupna",
+                (
+                    "U ovoj fazi dostupne su samo konverzije "
+                    "JPG, PNG i WEBP slika."
+                ),
+            )
             return
 
         output_format = self.output_format_combo.currentText()
-        input_format = get_display_format(self.selected_file)
+
+        if not output_format:
+            QMessageBox.warning(
+                self,
+                "Nedostaje izlazni format",
+                "Odaberi izlazni format.",
+            )
+            return
+
+        try:
+            self.output_directory.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+        except OSError as error:
+            QMessageBox.critical(
+                self,
+                "Greška izlazne mape",
+                f"Nije moguće stvoriti izlaznu mapu:\n{error}",
+            )
+            return
 
         self.progress_bar.setValue(0)
         self.status_label.setText(
-            "Status: "
-            f"{input_format} → {output_format} je odabrano. "
-            "Stvarna konverzija bit će spojena u sljedećoj fazi."
+            "Status: Pokretanje konverzije..."
         )
+        self._set_conversion_running(True)
+
+        self.conversion_thread = QThread(self)
+
+        self.conversion_worker = ImageConversionWorker(
+            input_file=self.selected_file,
+            output_directory=self.output_directory,
+            output_format=output_format,
+            quality=self.quality_slider.value(),
+        )
+
+        self.conversion_worker.moveToThread(
+            self.conversion_thread
+        )
+
+        self.conversion_thread.started.connect(
+            self.conversion_worker.run
+        )
+
+        self.conversion_worker.progress_changed.connect(
+            self.progress_bar.setValue
+        )
+        self.conversion_worker.status_changed.connect(
+            self._show_worker_status
+        )
+
+        self.conversion_worker.conversion_finished.connect(
+            self._conversion_finished
+        )
+        self.conversion_worker.conversion_failed.connect(
+            self._conversion_failed
+        )
+
+        self.conversion_worker.conversion_finished.connect(
+            self.conversion_thread.quit
+        )
+        self.conversion_worker.conversion_failed.connect(
+            self.conversion_thread.quit
+        )
+
+        self.conversion_worker.conversion_finished.connect(
+            self.conversion_worker.deleteLater
+        )
+        self.conversion_worker.conversion_failed.connect(
+            self.conversion_worker.deleteLater
+        )
+
+        self.conversion_thread.finished.connect(
+            self._thread_finished
+        )
+        self.conversion_thread.finished.connect(
+            self.conversion_thread.deleteLater
+        )
+
+        self.conversion_thread.start()
+
+    def _show_worker_status(self, message: str) -> None:
+        self.status_label.setText(f"Status: {message}")
+
+    def _conversion_finished(self, result_path: str) -> None:
+        self.progress_bar.setValue(100)
+        self.status_label.setText(
+            f"Status: Uspješno spremljeno:\n{result_path}"
+        )
+
+        self._set_conversion_running(False)
+
+    def _conversion_failed(self, error_message: str) -> None:
+        self.progress_bar.setValue(0)
+        self.status_label.setText(
+            "Status: Konverzija nije uspjela."
+        )
+
+        self._set_conversion_running(False)
+
+        QMessageBox.critical(
+            self,
+            "Greška konverzije",
+            error_message,
+        )
+
+    def _thread_finished(self) -> None:
+        self.conversion_worker = None
+        self.conversion_thread = None
+        self._set_conversion_running(False)
