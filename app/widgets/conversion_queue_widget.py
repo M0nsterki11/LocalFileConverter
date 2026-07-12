@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.conversion_item import ConversionItem
+from app.icon_provider import get_icon
 
 
 class ConversionQueueWidget(QWidget):
@@ -131,7 +132,12 @@ class ConversionQueueWidget(QWidget):
 
         self._updating = True
         self._set_text(row, self.COLUMN_STATUS, item.status.display_label)
-        self._set_text(row, self.COLUMN_RESULT, self._result_text(item))
+        self._set_text(
+            row,
+            self.COLUMN_RESULT,
+            self._result_text(item),
+            self._result_detail(item),
+        )
 
         progress_bar = self.table.cellWidget(
             row,
@@ -262,10 +268,14 @@ class ConversionQueueWidget(QWidget):
         result_item = self._create_text_item(
             self._result_text(item)
         )
-        result_item.setToolTip(self._result_text(item))
+        result_item.setToolTip(self._result_detail(item))
         self.table.setItem(row, self.COLUMN_RESULT, result_item)
 
         remove_button = QPushButton("Ukloni")
+        remove_button.setIcon(get_icon(self, "remove"))
+        remove_button.setToolTip(
+            "Uklanja ovu stavku dok grupna konverzija nije aktivna."
+        )
         remove_button.clicked.connect(
             lambda checked=False, item_id=item.unique_id: (
                 self.remove_requested.emit(item_id)
@@ -330,6 +340,7 @@ class ConversionQueueWidget(QWidget):
         row: int,
         column: int,
         text: str,
+        tooltip: str | None = None,
     ) -> None:
         item = self.table.item(row, column)
 
@@ -339,7 +350,7 @@ class ConversionQueueWidget(QWidget):
         else:
             item.setText(text)
 
-        item.setToolTip(text)
+        item.setToolTip(tooltip if tooltip is not None else text)
 
     @staticmethod
     def _create_text_item(text: str) -> QTableWidgetItem:
@@ -353,6 +364,19 @@ class ConversionQueueWidget(QWidget):
     @staticmethod
     def _result_text(item: ConversionItem) -> str:
         if item.result_path is not None:
+            return item.result_path.name
+
+        if item.error_message:
+            return _short_message(item.error_message)
+
+        if item.status_message:
+            return _short_message(item.status_message)
+
+        return ""
+
+    @staticmethod
+    def _result_detail(item: ConversionItem) -> str:
+        if item.result_path is not None:
             return str(item.result_path)
 
         if item.error_message:
@@ -362,3 +386,12 @@ class ConversionQueueWidget(QWidget):
             return item.status_message
 
         return ""
+
+
+def _short_message(message: str) -> str:
+    first_line = message.strip().splitlines()[0] if message.strip() else ""
+
+    if len(first_line) <= 120:
+        return first_line
+
+    return f"{first_line[:117]}..."

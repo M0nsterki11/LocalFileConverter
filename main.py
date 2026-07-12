@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
@@ -7,26 +6,10 @@ from app.constants import (
     APP_NAME,
     APP_ORGANIZATION,
 )
+from app.icon_provider import get_app_icon
 from app.main_window import MainWindow
-
-STYLESHEET_PATH = (
-    Path(__file__).resolve().parent
-    / "resources"
-    / "icons"
-    / "application_stylesheet.qss"
-)
-
-
-def load_stylesheet(app: QApplication) -> None:
-    if not STYLESHEET_PATH.exists():
-        return
-
-    try:
-        stylesheet = STYLESHEET_PATH.read_text(encoding="utf-8")
-        app.setStyleSheet(stylesheet)
-    except OSError:
-        # Aplikacija i dalje radi ako se stil ne uspije učitati.
-        pass
+from app.settings import load_app_settings
+from app.theme_manager import ThemeManager
 
 
 def main() -> int:
@@ -34,9 +17,19 @@ def main() -> int:
     app.setOrganizationName(APP_ORGANIZATION)
     app.setApplicationName(APP_NAME)
 
-    load_stylesheet(app)
+    app_icon = get_app_icon()
 
-    window = MainWindow()
+    if not app_icon.isNull():
+        app.setWindowIcon(app_icon)
+
+    app_settings = load_app_settings()
+    theme_manager = ThemeManager()
+    theme_manager.apply_theme(app, app_settings.theme)
+
+    window = MainWindow(
+        app_settings=app_settings,
+        theme_manager=theme_manager,
+    )
     window.show()
 
     return app.exec()

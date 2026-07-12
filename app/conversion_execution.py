@@ -5,6 +5,11 @@ from app.constants import (
     IMAGE_EXTENSIONS,
     OFFICE_EXTENSIONS,
 )
+from app.settings import (
+    DEFAULT_IMAGE_QUALITY,
+    DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+    DEFAULT_PDF_DPI,
+)
 from converters.base_converter import CancelCheck
 from converters.image_converter import convert_image
 from converters.office_converter import convert_office_to_pdf
@@ -22,10 +27,10 @@ def run_conversion(
     input_file: str | Path,
     output_directory: str | Path,
     output_format: str,
-    quality: int = 90,
-    dpi: int = 150,
+    quality: int = DEFAULT_IMAGE_QUALITY,
+    dpi: int = DEFAULT_PDF_DPI,
     page_selection: str | None = None,
-    multi_page_output_mode: str = "folder",
+    multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
     libreoffice_path: str | Path | None = None,
     cancel_check: CancelCheck | None = None,
     progress_callback: ProgressCallback | None = None,

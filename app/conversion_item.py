@@ -5,6 +5,12 @@ from enum import Enum
 from pathlib import Path
 from uuid import uuid4
 
+from app.settings import (
+    DEFAULT_IMAGE_QUALITY,
+    DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+    DEFAULT_OFFICE_ENGINE,
+    DEFAULT_PDF_DPI,
+)
 from utils.format_utils import (
     get_available_output_formats,
     get_display_format,
@@ -43,11 +49,11 @@ class ConversionItem:
     progress: int = 0
     result_path: Path | None = None
     error_message: str | None = None
-    quality: int = 90
-    dpi: int = 150
+    quality: int = DEFAULT_IMAGE_QUALITY
+    dpi: int = DEFAULT_PDF_DPI
     page_selection: str | None = None
-    multi_page_output_mode: str = "folder"
-    office_engine: str = "libreoffice"
+    multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE
+    office_engine: str = DEFAULT_OFFICE_ENGINE
     status_message: str | None = None
 
     @property
@@ -96,7 +102,10 @@ def normalize_input_path(path: str | Path) -> str:
 def create_conversion_item(
     input_path: str | Path,
     output_directory: str | Path,
-    office_engine: str = "libreoffice",
+    office_engine: str = DEFAULT_OFFICE_ENGINE,
+    quality: int = DEFAULT_IMAGE_QUALITY,
+    dpi: int = DEFAULT_PDF_DPI,
+    multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
 ) -> ConversionItem:
     path = Path(input_path)
     output_formats = get_available_output_formats(path)
@@ -111,6 +120,9 @@ def create_conversion_item(
         input_format=get_display_format(path),
         output_format=output_formats[0],
         output_directory=Path(output_directory),
+        quality=quality,
+        dpi=dpi,
+        multi_page_output_mode=multi_page_output_mode,
         office_engine=office_engine,
     )
 
@@ -119,7 +131,10 @@ def build_unique_supported_items(
     file_paths: list[str | Path],
     existing_items: list[ConversionItem],
     output_directory: str | Path,
-    office_engine: str = "libreoffice",
+    office_engine: str = DEFAULT_OFFICE_ENGINE,
+    quality: int = DEFAULT_IMAGE_QUALITY,
+    dpi: int = DEFAULT_PDF_DPI,
+    multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
 ) -> AddFilesResult:
     known_paths = {
         normalize_input_path(item.input_path)
@@ -147,6 +162,9 @@ def build_unique_supported_items(
             input_path=path,
             output_directory=output_directory,
             office_engine=office_engine,
+            quality=quality,
+            dpi=dpi,
+            multi_page_output_mode=multi_page_output_mode,
         )
         added_items.append(item)
         known_paths.add(normalized_path)

@@ -3,15 +3,12 @@ from pathlib import Path
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
 
+from app.settings import DEFAULT_OUTPUT_DIRECTORY
+
 
 def get_default_output_directory() -> Path:
     """Vraća zadanu izlaznu mapu aplikacije."""
-    return (
-        Path.home()
-        / "Documents"
-        / "LocalFileConverter"
-        / "Converted"
-    )
+    return DEFAULT_OUTPUT_DIRECTORY
 
 
 def generate_unique_output_path(

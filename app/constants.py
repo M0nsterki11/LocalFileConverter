@@ -1,6 +1,9 @@
 APP_NAME = "Local File Converter"
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.4.1"
 APP_ORGANIZATION = "LocalFileConverter"
+GITHUB_REPOSITORY_URL = (
+    "https://github.com/M0nsterki11/LocalFileConverter"
+)
 
 IMAGE_EXTENSIONS = {
     ".jpg",

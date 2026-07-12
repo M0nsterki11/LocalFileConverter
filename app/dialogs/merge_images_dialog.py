@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from app.constants import IMAGE_EXTENSIONS
 from app.conversion_item import normalize_input_path
+from app.icon_provider import get_icon
 from converters.base_converter import ConversionCancelledError
 from converters.pdf_converter import convert_images_to_pdf
 from utils.file_utils import get_default_output_directory
@@ -197,6 +198,7 @@ class MergeImagesDialog(QDialog):
         action_layout.addWidget(self.cancel_button)
         action_layout.addWidget(self.close_button)
         root_layout.addLayout(action_layout)
+        self._apply_icons_and_tooltips()
 
     def _connect_signals(self) -> None:
         self.add_button.clicked.connect(self._add_images)
@@ -216,6 +218,32 @@ class MergeImagesDialog(QDialog):
         self.close_button.clicked.connect(self.close)
         self.table.itemSelectionChanged.connect(
             self._update_controls
+        )
+
+    def _apply_icons_and_tooltips(self) -> None:
+        self.add_button.setIcon(get_icon(self, "add"))
+        self.move_up_button.setIcon(get_icon(self, "up"))
+        self.move_down_button.setIcon(get_icon(self, "down"))
+        self.remove_button.setIcon(get_icon(self, "remove"))
+        self.clear_button.setIcon(get_icon(self, "clear"))
+        self.select_output_button.setIcon(get_icon(self, "folder"))
+        self.start_button.setIcon(get_icon(self, "merge"))
+        self.cancel_button.setIcon(get_icon(self, "cancel"))
+
+        self.move_up_button.setToolTip(
+            "Pomice oznacenu sliku jednu poziciju gore."
+        )
+        self.move_down_button.setToolTip(
+            "Pomice oznacenu sliku jednu poziciju dolje."
+        )
+        self.remove_button.setToolTip(
+            "Uklanja oznacenu sliku iz PDF-a."
+        )
+        self.start_button.setToolTip(
+            "Spaja slike redoslijedom prikazanim u tablici."
+        )
+        self.cancel_button.setToolTip(
+            "Sigurno prekida spajanje i brise nepotpuni PDF."
         )
 
     def _add_images(self) -> None:

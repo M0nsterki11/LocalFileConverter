@@ -1,0 +1,151 @@
+QWidget {
+    font-family: "Segoe UI";
+    font-size: 14px;
+}
+
+QMainWindow,
+QDialog {
+    font-family: "Segoe UI";
+}
+
+QLabel#mainTitle {
+    font-size: 26px;
+    font-weight: 700;
+}
+
+QLabel#subtitle {
+    font-size: 14px;
+}
+
+QLabel#valueLabel {
+    font-weight: 600;
+}
+
+QLabel#sectionTitle {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QLabel#emptyStateLabel {
+    padding: 12px;
+    font-weight: 600;
+}
+
+QFrame#dropArea {
+    border-width: 2px;
+    border-style: dashed;
+    border-radius: 8px;
+}
+
+QLabel#dropTitle {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+QGroupBox {
+    border-radius: 8px;
+    margin-top: 12px;
+    padding: 14px;
+    font-weight: 600;
+}
+
+QGroupBox::title {
+    left: 12px;
+    padding: 0 6px;
+}
+
+QPushButton {
+    border-radius: 7px;
+    padding: 8px 14px;
+    font-weight: 600;
+    min-height: 22px;
+}
+
+QPushButton#convertButton {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QPushButton#cancelButton {
+    font-weight: 700;
+}
+
+QComboBox,
+QLineEdit,
+QSpinBox {
+    border-radius: 7px;
+    padding: 7px 10px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 28px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QSlider::groove:horizontal {
+    height: 6px;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    width: 16px;
+    height: 16px;
+    margin: -5px 0;
+    border-radius: 8px;
+}
+
+QProgressBar {
+    border-radius: 7px;
+    min-height: 22px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    border-radius: 6px;
+}
+
+QTableWidget {
+    gridline-color: transparent;
+    selection-background-color: transparent;
+}
+
+QTableWidget::item {
+    padding: 6px;
+}
+
+QHeaderView::section {
+    padding: 7px 8px;
+    font-weight: 700;
+    border: none;
+}
+
+QScrollArea {
+    border: none;
+}
+
+QMenuBar::item {
+    padding: 5px 10px;
+}
+
+QMenu::item {
+    padding: 6px 28px 6px 22px;
+}
+
+QTabWidget::pane {
+    border-radius: 8px;
+}
+
+QTabBar::tab {
+    padding: 8px 14px;
+    font-weight: 600;
+}
+
+QToolTip {
+    padding: 6px 8px;
+    border-radius: 5px;
+}

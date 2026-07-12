@@ -5,6 +5,11 @@ from threading import Event
 from PySide6.QtCore import QObject, Signal, Slot
 
 from app.conversion_execution import run_conversion
+from app.settings import (
+    DEFAULT_IMAGE_QUALITY,
+    DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+    DEFAULT_PDF_DPI,
+)
 from converters.base_converter import (
     ConversionCancelledError,
     check_cancelled,
@@ -26,10 +31,10 @@ class ConversionWorker(QObject):
         input_file: str | Path,
         output_directory: str | Path,
         output_format: str,
-        quality: int = 90,
-        dpi: int = 150,
+        quality: int = DEFAULT_IMAGE_QUALITY,
+        dpi: int = DEFAULT_PDF_DPI,
         page_selection: str | None = None,
-        multi_page_output_mode: str = "folder",
+        multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
         libreoffice_path: str | Path | None = None,
     ) -> None:
         super().__init__()

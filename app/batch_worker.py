@@ -158,7 +158,7 @@ class BatchConversionWorker(QObject):
 
             item.set_status(
                 ConversionStatus.CANCELLED,
-                "Batch je prekinut prije pokretanja stavke.",
+                "Grupna konverzija je prekinuta prije pokretanja stavke.",
             )
             item.error_message = item.status_message
             self.item_cancelled.emit(item.unique_id)
@@ -179,7 +179,7 @@ class BatchConversionWorker(QObject):
 
             item.set_status(
                 ConversionStatus.CANCELLED,
-                "Batch je prekinut prije pokretanja stavke.",
+                "Grupna konverzija je prekinuta prije pokretanja stavke.",
             )
             item.error_message = item.status_message
             self.item_cancelled.emit(item.unique_id)
