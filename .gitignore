@@ -21,10 +21,12 @@ test-output/
 build/
 dist/
 *.spec
+!LocalFileConverter.spec
 
 # Test cache
 .pytest_cache/
 .coverage
+htmlcov/
 
 # Operacijski sustav
 Thumbs.db

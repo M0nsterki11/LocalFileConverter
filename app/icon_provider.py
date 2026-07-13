@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QStyle, QWidget
 
+from utils.resource_utils import get_resource_path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ICON_DIRECTORY = PROJECT_ROOT / "resources" / "icons"
-APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
+
+ICON_DIRECTORY = get_resource_path("resources/icons")
+APP_ICON_PATH = get_resource_path("resources/app_icon.ico")
 
 FALLBACK_ICONS = {
     "add": QStyle.StandardPixmap.SP_FileDialogNewFolder,

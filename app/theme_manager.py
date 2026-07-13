@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -7,10 +8,11 @@ from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication
 
 from app.settings import validate_theme
+from utils.logging_utils import LOGGER_NAME, sanitize_path
+from utils.resource_utils import get_resource_path
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_THEME_DIRECTORY = PROJECT_ROOT / "resources" / "themes"
+DEFAULT_THEME_DIRECTORY = get_resource_path("resources/themes")
 
 
 class ThemeManager:
@@ -98,8 +100,17 @@ class ThemeManager:
 
         try:
             if not path.exists():
+                logging.getLogger(LOGGER_NAME).warning(
+                    "QSS theme file is missing: %s",
+                    sanitize_path(path),
+                )
                 return ""
 
             return path.read_text(encoding="utf-8")
-        except OSError:
+        except OSError as error:
+            logging.getLogger(LOGGER_NAME).warning(
+                "Could not read QSS theme file %s: %s",
+                sanitize_path(path),
+                error,
+            )
             return ""

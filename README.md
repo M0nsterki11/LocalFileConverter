@@ -1,7 +1,7 @@
 Local File Converter
 ====================
 
-Verzija: 0.4.2
+Verzija: 0.5.0
 
 Local File Converter je Windows desktop aplikacija napravljena u Pythonu
 i PySide6. Obrada datoteka odvija se lokalno na racunalu; dokumenti se
@@ -69,6 +69,56 @@ Development testovi
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
 ```
+
+Building the Windows executable
+-------------------------------
+
+Primary release format je PyInstaller ONEDIR. Installer ce doci u
+sljedecoj fazi; za sada se distribuira cijeli folder iz `dist`.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+```
+
+Debug ONEDIR build s konzolom:
+
+```powershell
+.\scripts\build_debug.ps1
+```
+
+Release ONEDIR build bez konzole:
+
+```powershell
+.\scripts\build_release.ps1
+```
+
+Zavrsni EXE nalazi se ovdje:
+
+```text
+dist\LocalFileConverter\LocalFileConverter.exe
+```
+
+Za pokretanje na drugom racunalu kopiraj cijeli folder:
+
+```text
+dist\LocalFileConverter\
+```
+
+Nemoj kopirati samo `.exe`, jer ONEDIR build treba `_internal`,
+PySide6 DLL-ove, Qt plugine i runtime resurse.
+
+Eksperimentalni ONEFILE build:
+
+```powershell
+.\scripts\build_onefile.ps1
+```
+
+ONEFILE nije preporuceni release format dok se ne potvrdi stabilnost.
+Microsoft Office i LibreOffice se ne ugraduju u build; aplikacija koristi
+lokalne instalacije ako postoje. Build trenutno nije digitalno potpisan,
+pa Windows SmartScreen moze prikazati upozorenje.
 
 Screenshot
 ----------
