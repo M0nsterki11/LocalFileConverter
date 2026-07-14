@@ -120,6 +120,48 @@ Microsoft Office i LibreOffice se ne ugraduju u build; aplikacija koristi
 lokalne instalacije ako postoje. Build trenutno nije digitalno potpisan,
 pa Windows SmartScreen moze prikazati upozorenje.
 
+Windows Installer
+-----------------
+
+Installer se gradi pomocu Inno Setupa i koristi stabilni ONEDIR build iz:
+
+```text
+dist\LocalFileConverter\
+```
+
+Instaliraj Inno Setup 6 sa sluzbene stranice, zatim pokreni:
+
+```powershell
+.\scripts\build_installer.ps1
+```
+
+Ako je ONEDIR build vec svjez, mozes preskociti app build:
+
+```powershell
+.\scripts\build_installer.ps1 -SkipAppBuild
+```
+
+Zavrsni Setup EXE nalazi se ovdje:
+
+```text
+installer_output\LocalFileConverter_Setup_0.5.0_x64.exe
+```
+
+Installer je per-user i instalira aplikaciju u:
+
+```text
+%LOCALAPPDATA%\Programs\LocalFileConverter
+```
+
+Microsoft Office nije ukljucen u installer. LibreOffice download jos nije
+aktiviran; konfiguracija za buducu fiksnu LibreOffice verziju nalazi se u
+`packaging\libreoffice_dependency.json` i mora imati tocnu verziju, sluzbeni
+URL i SHA-256 prije nego se omoguci.
+
+Trenutni installer nije digitalno potpisan. Windows SmartScreen moze prikazati
+Unknown publisher. `installer_output/` se ne commita; Setup EXE se kasnije
+objavljuje kao GitHub Release asset.
+
 Screenshot
 ----------
 

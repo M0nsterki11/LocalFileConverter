@@ -1,0 +1,5 @@
+#define AppVersion "0.5.0"
+#define AppName "Local File Converter"
+#define AppPublisher "LocalFileConverter"
+#define AppExeName "LocalFileConverter.exe"
+#define AppSetupBaseName "LocalFileConverter_Setup_0.5.0_x64"

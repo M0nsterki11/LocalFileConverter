@@ -16,6 +16,7 @@ output/
 temp/
 logs/
 test-output/
+installer_output/
 
 # PyInstaller
 build/

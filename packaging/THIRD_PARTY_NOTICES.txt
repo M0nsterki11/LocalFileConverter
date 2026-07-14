@@ -1,0 +1,77 @@
+Local File Converter - Third-Party Notices
+==========================================
+
+This file summarizes third-party components distributed with the Windows
+build. It is not legal advice. Review upstream licenses before public
+distribution.
+
+Project License
+---------------
+
+No project LICENSE file is currently present in this repository. Borna must
+choose and add the project license before a public release.
+
+Python
+------
+
+Python runtime files are bundled by PyInstaller.
+License: Python Software Foundation License.
+
+PySide6 / Qt / Shiboken
+----------------------
+
+Packages: PySide6, PySide6_Addons, PySide6_Essentials, shiboken6
+Version: 6.11.1
+Metadata license: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+
+Qt/PySide licensing obligations must be reviewed before public distribution.
+
+Pillow
+------
+
+Package: pillow
+Version: 12.3.0
+Metadata license expression: MIT-CMU
+
+PyMuPDF / MuPDF
+---------------
+
+Package: pymupdf
+Version: 1.28.0
+Metadata license: Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License
+
+Important: PyMuPDF/MuPDF licensing must be confirmed before public release.
+Using PyMuPDF may require AGPL compliance or an Artifex commercial license.
+
+PyInstaller
+-----------
+
+Package: PyInstaller
+Version: 6.21.0
+Metadata license: GPLv2-or-later with a special exception allowing use of
+PyInstaller to build and distribute non-free programs.
+
+PyInstaller Build Dependencies
+------------------------------
+
+Package: altgraph
+Version: 0.17.5
+License: MIT
+
+Package: pefile
+Version: 2024.8.26
+License: MIT
+
+Package: pyinstaller-hooks-contrib
+Version: 2026.6
+Metadata classifiers: Apache Software License, GPLv2
+
+Package: pywin32-ctypes
+Version: 0.2.3
+License: BSD-3-Clause
+
+Notes
+-----
+
+Microsoft Office and LibreOffice are not bundled with the installer.
+The application uses local installations if they exist.
