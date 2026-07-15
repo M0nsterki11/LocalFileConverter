@@ -12,6 +12,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 INSTALLER_OUTPUT = PROJECT_ROOT / "installer_output"
 LIBREOFFICE_CONFIG = PROJECT_ROOT / "packaging" / "libreoffice_dependency.json"
 THIRD_PARTY_NOTICES = PROJECT_ROOT / "packaging" / "THIRD_PARTY_NOTICES.txt"
+INSTALLER_SCRIPT = PROJECT_ROOT / "packaging" / "LocalFileConverter.iss"
+APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
+ONEDIR_BUNDLE = PROJECT_ROOT / "dist" / "LocalFileConverter"
 
 
 def main() -> int:
@@ -49,6 +52,10 @@ def main() -> int:
     if not THIRD_PARTY_NOTICES.exists():
         errors.append("THIRD_PARTY_NOTICES.txt ne postoji.")
 
+    _check_non_empty_file(APP_ICON_PATH, "resources/app_icon.ico", errors)
+    _check_installer_icon_configuration(errors)
+    _check_bundle_icon(errors)
+
     config_errors = validate_libreoffice_config(LIBREOFFICE_CONFIG)
     errors.extend(config_errors)
 
@@ -70,6 +77,54 @@ def main() -> int:
     print(f"SHA-256: {digest}")
     print(f"Wrote: {sha_file}")
     return 0
+
+
+def _check_non_empty_file(
+    path: Path,
+    label: str,
+    errors: list[str],
+) -> None:
+    if not path.exists():
+        errors.append(f"{label} ne postoji: {path}")
+        return
+
+    if path.stat().st_size <= 0:
+        errors.append(f"{label} je prazan: {path}")
+
+
+def _check_bundle_icon(errors: list[str]) -> None:
+    candidates = [
+        ONEDIR_BUNDLE / "_internal" / "resources" / "app_icon.ico",
+        ONEDIR_BUNDLE / "resources" / "app_icon.ico",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            _check_non_empty_file(
+                candidate,
+                "app_icon.ico u ONEDIR bundleu",
+                errors,
+            )
+            return
+
+    errors.append("app_icon.ico nije ukljucen u release ONEDIR bundle.")
+
+
+def _check_installer_icon_configuration(errors: list[str]) -> None:
+    if not INSTALLER_SCRIPT.exists():
+        errors.append(f"Inno Setup skripta ne postoji: {INSTALLER_SCRIPT}")
+        return
+
+    script_text = INSTALLER_SCRIPT.read_text(encoding="utf-8").casefold()
+    required_snippets = {
+        "SetupIconFile": "setupiconfile=..\\resources\\app_icon.ico",
+        "UninstallDisplayIcon": "uninstalldisplayicon={app}\\{#appexename}",
+        "shortcut IconFilename": 'iconfilename: "{app}\\{#appexename}"',
+    }
+
+    for label, snippet in required_snippets.items():
+        if snippet.casefold() not in script_text:
+            errors.append(f"Inno Setup skripti nedostaje {label} za app ikonu.")
 
 
 def read_app_version() -> str:

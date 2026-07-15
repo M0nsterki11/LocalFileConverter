@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from app.icon_provider import get_app_icon
 from utils.error_handler import ErrorInfo
 from utils.logging_utils import open_log_directory
 
@@ -26,6 +27,12 @@ class ErrorDetailsDialog(QDialog):
         self.close_button_text = close_button_text
         self.setWindowTitle(error_info.title)
         self.setMinimumWidth(560)
+
+        app_icon = get_app_icon()
+
+        if not app_icon.isNull():
+            self.setWindowIcon(app_icon)
+
         self._build_ui()
 
     def _build_ui(self) -> None:

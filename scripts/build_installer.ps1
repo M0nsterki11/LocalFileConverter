@@ -85,9 +85,8 @@ if (-not $Iscc) {
     Stop-Build "ISCC.exe nije pronaden. Instaliraj Inno Setup 6 ili postavi INNO_SETUP_ISCC na punu putanju do ISCC.exe."
 }
 
-if (-not (Test-Path $IconFile)) {
-    Write-Warning "app_icon.ico nije pronaden; installer koristi fallback ikonu."
-}
+if (-not (Test-Path $IconFile)) { Stop-Build "Nedostaje resources\app_icon.ico; ikona je obavezna za installer build." }
+if ((Get-Item $IconFile).Length -le 0) { Stop-Build "resources\app_icon.ico je prazan." }
 
 if (-not $SkipTests) {
     & $PythonExe -m pytest -q
@@ -105,6 +104,14 @@ if (-not (Test-Path $OnedirExe)) {
 
 & $PythonExe $VerifyBuildScript --bundle $OnedirBundle --name "LocalFileConverter"
 if ($LASTEXITCODE -ne 0) { Stop-Build "verify_build.py nije prosao." }
+
+$BundleIconCandidates = @(
+    (Join-Path $OnedirBundle "_internal\resources\app_icon.ico"),
+    (Join-Path $OnedirBundle "resources\app_icon.ico")
+)
+$BundleIcon = $BundleIconCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $BundleIcon) { Stop-Build "app_icon.ico nije ukljucen u release ONEDIR bundle." }
+if ((Get-Item $BundleIcon).Length -le 0) { Stop-Build "app_icon.ico u release ONEDIR bundleu je prazan." }
 
 & $PythonExe $VersionScript
 if ($LASTEXITCODE -ne 0) { Stop-Build "Generiranje installer version include datoteke nije uspjelo." }

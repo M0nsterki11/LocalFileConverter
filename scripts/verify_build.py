@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
 
 
 def main() -> int:
@@ -21,6 +22,7 @@ def main() -> int:
     exe_path = bundle_path / f"{args.name}.exe"
     errors: list[str] = []
 
+    _check_file(APP_ICON_PATH, errors)
     _check_file(exe_path, errors)
 
     resource_root = _find_resource_root(bundle_path)
@@ -28,6 +30,8 @@ def main() -> int:
     if resource_root is None:
         errors.append("resources folder nije pronaden u bundleu")
     else:
+        _check_file(resource_root / "app_icon.ico", errors)
+
         for qss_name in ("common.qss", "light.qss", "dark.qss"):
             _check_file(resource_root / "themes" / qss_name, errors)
 

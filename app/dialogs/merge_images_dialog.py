@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from app.constants import IMAGE_EXTENSIONS
 from app.conversion_item import normalize_input_path
-from app.icon_provider import get_icon
+from app.icon_provider import get_app_icon, get_icon
 from converters.base_converter import ConversionCancelledError
 from converters.pdf_converter import convert_images_to_pdf
 from utils.error_handler import exception_to_error_info
@@ -110,6 +110,11 @@ class MergeImagesDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Spoji slike u jedan PDF")
         self.resize(760, 560)
+
+        app_icon = get_app_icon()
+
+        if not app_icon.isNull():
+            self.setWindowIcon(app_icon)
 
         self.image_paths: list[Path] = []
         self.output_directory = (

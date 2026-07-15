@@ -9,6 +9,7 @@ $PythonExe = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
 $SpecFile = Join-Path $ProjectRoot "LocalFileConverter.spec"
 $MainFile = Join-Path $ProjectRoot "main.py"
 $VersionScript = Join-Path $ProjectRoot "scripts\generate_windows_version_info.py"
+$IconFile = Join-Path $ProjectRoot "resources\app_icon.ico"
 $OutputExe = Join-Path $ProjectRoot "dist\LocalFileConverterOnefile.exe"
 
 function Stop-Build($Message) {
@@ -20,6 +21,8 @@ if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "Nedostaje .
 if (-not (Test-Path $PythonExe)) { Stop-Build "Nedostaje .venv\Scripts\python.exe." }
 if (-not (Test-Path $MainFile)) { Stop-Build "Nedostaje main.py." }
 if (-not (Test-Path $SpecFile)) { Stop-Build "Nedostaje LocalFileConverter.spec." }
+if (-not (Test-Path $IconFile)) { Stop-Build "Nedostaje resources\app_icon.ico; ikona je obavezna za onefile build." }
+if ((Get-Item $IconFile).Length -le 0) { Stop-Build "resources\app_icon.ico je prazan." }
 
 & $PythonExe -c "import PyInstaller" 2>$null
 if ($LASTEXITCODE -ne 0) {

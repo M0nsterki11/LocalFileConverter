@@ -29,9 +29,8 @@ if ($LASTEXITCODE -ne 0) {
     Stop-Build "PyInstaller nije instaliran. Pokreni: .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt"
 }
 
-if (-not (Test-Path $IconFile)) {
-    Write-Warning "resources\app_icon.ico nije pronaden; build ce koristiti fallback ikonu."
-}
+if (-not (Test-Path $IconFile)) { Stop-Build "Nedostaje resources\app_icon.ico; ikona je obavezna za release build." }
+if ((Get-Item $IconFile).Length -le 0) { Stop-Build "resources\app_icon.ico je prazan." }
 
 if (-not $SkipTests) {
     & $PythonExe -m pytest -q

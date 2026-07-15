@@ -28,7 +28,10 @@ datas = []
 if resources_path.exists():
     datas.append((str(resources_path), "resources"))
 
-icon = str(icon_path) if icon_path.exists() else None
+if not icon_path.exists():
+    raise FileNotFoundError(f"Application icon is required: {icon_path}")
+
+icon = str(icon_path)
 version = str(version_path) if version_path.exists() else None
 
 a = Analysis(

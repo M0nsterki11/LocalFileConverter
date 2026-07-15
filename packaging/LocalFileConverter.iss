@@ -23,10 +23,7 @@ UninstallDisplayIcon={app}\{#AppExeName}
 CloseApplications=yes
 CloseApplicationsFilter={#AppExeName}
 RestartApplications=no
-
-#if FileExists("..\resources\app_icon.ico")
 SetupIconFile=..\resources\app_icon.ico
-#endif
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -42,9 +39,9 @@ Source: "..\dist\LocalFileConverter\*"; DestDir: "{app}"; Flags: ignoreversion r
 Source: "THIRD_PARTY_NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
-Name: "{group}\Uninstall Local File Converter"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{group}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
+Name: "{group}\Uninstall Local File Converter"; Filename: "{uninstallexe}"; IconFilename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Pokreni Local File Converter"; Flags: nowait postinstall skipifsilent

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.icon_provider import get_icon
+from app.icon_provider import get_app_icon, get_icon
 from app.settings import (
     AppSettings,
     DEFAULT_IMAGE_QUALITY,
@@ -58,6 +58,11 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Postavke")
         self.resize(620, 520)
+
+        app_icon = get_app_icon()
+
+        if not app_icon.isNull():
+            self.setWindowIcon(app_icon)
 
         self._settings = AppSettings(**app_settings.__dict__)
         self._libreoffice_path = libreoffice_path
