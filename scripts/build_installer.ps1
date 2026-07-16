@@ -14,6 +14,7 @@ $VersionScript = Join-Path $ProjectRoot "scripts\generate_installer_version.py"
 $VerifyInstallerScript = Join-Path $ProjectRoot "scripts\verify_installer.py"
 $InstallerScript = Join-Path $ProjectRoot "packaging\LocalFileConverter.iss"
 $LibreOfficeConfig = Join-Path $ProjectRoot "packaging\libreoffice_dependency.json"
+$LibreOfficeInclude = Join-Path $ProjectRoot "packaging\generated_libreoffice_dependency.iss"
 $OnedirBundle = Join-Path $ProjectRoot "dist\LocalFileConverter"
 $OnedirExe = Join-Path $OnedirBundle "LocalFileConverter.exe"
 $InstallerOutput = Join-Path $ProjectRoot "installer_output"
@@ -56,6 +57,10 @@ function Find-Iscc {
     return $null
 }
 
+function ConvertTo-IssString($Value) {
+    return ([string]$Value).Replace('"', '""')
+}
+
 function Validate-LibreOfficeConfig {
     if (-not (Test-Path $LibreOfficeConfig)) {
         Stop-Build "Nedostaje packaging\libreoffice_dependency.json."
@@ -64,12 +69,54 @@ function Validate-LibreOfficeConfig {
     $Config = Get-Content $LibreOfficeConfig -Raw | ConvertFrom-Json
 
     if ($Config.ENABLED -eq $true) {
-        foreach ($Field in @("VERSION", "DOWNLOAD_URL", "SHA256", "EXPECTED_SOFFICE_PATH")) {
+        foreach ($Field in @("VERSION", "ARCHITECTURE", "FILENAME", "DOWNLOAD_URL", "SHA256", "EXPECTED_FILE_SIZE", "EXPECTED_SOFFICE_PATH")) {
             if (-not ($Config.$Field) -or [string]::IsNullOrWhiteSpace([string]$Config.$Field)) {
                 Stop-Build "LibreOffice ENABLED=true, ali nedostaje $Field."
             }
         }
+
+        if ($Config.VERSION -ne "26.2.4") {
+            Stop-Build "LibreOffice VERSION mora biti pinned na 26.2.4."
+        }
+
+        if ($Config.ARCHITECTURE -ne "x64") {
+            Stop-Build "LibreOffice ARCHITECTURE mora biti x64."
+        }
+
+        if ($Config.FILENAME -ne "LibreOffice_26.2.4_Win_x86-64.msi") {
+            Stop-Build "LibreOffice FILENAME ne odgovara pinned MSI datoteci."
+        }
+
+        if ([string]$Config.DOWNLOAD_URL -notmatch '^https://download\.documentfoundation\.org/libreoffice/stable/26\.2\.4/win/x86_64/LibreOffice_26\.2\.4_Win_x86-64\.msi$') {
+            Stop-Build "LibreOffice DOWNLOAD_URL mora biti tocni sluzbeni HTTPS pinned URL."
+        }
+
+        if ([string]$Config.SHA256 -notmatch '^[0-9a-fA-F]{64}$') {
+            Stop-Build "LibreOffice SHA256 mora imati 64 heksadecimalna znaka."
+        }
+
+        if ([string]$Config.SHA256 -ne "202f26cda071c5aa4996a5a28412fddceb3891dceb0366982c62650456c0730f") {
+            Stop-Build "LibreOffice SHA256 ne odgovara pinned vrijednosti."
+        }
+
+        if ([int64]$Config.EXPECTED_FILE_SIZE -ne 372539392) {
+            Stop-Build "LibreOffice EXPECTED_FILE_SIZE ne odgovara pinned vrijednosti."
+        }
     }
+
+    $EnabledLiteral = if ($Config.ENABLED -eq $true) { "True" } else { "False" }
+    $ExpectedFileSize = if ($Config.EXPECTED_FILE_SIZE) { [int64]$Config.EXPECTED_FILE_SIZE } else { 0 }
+    $Lines = @(
+        "#define LibreOfficeEnabled $EnabledLiteral",
+        "#define LibreOfficeVersion ""$(ConvertTo-IssString $Config.VERSION)""",
+        "#define LibreOfficeArchitecture ""$(ConvertTo-IssString $Config.ARCHITECTURE)""",
+        "#define LibreOfficeFilename ""$(ConvertTo-IssString $Config.FILENAME)""",
+        "#define LibreOfficeDownloadUrl ""$(ConvertTo-IssString $Config.DOWNLOAD_URL)""",
+        "#define LibreOfficeSHA256 ""$(ConvertTo-IssString $Config.SHA256)""",
+        "#define LibreOfficeExpectedFileSize $ExpectedFileSize",
+        "#define LibreOfficeExpectedSofficePath ""$(ConvertTo-IssString $Config.EXPECTED_SOFFICE_PATH)"""
+    )
+    Set-Content -Path $LibreOfficeInclude -Value $Lines -Encoding UTF8
 }
 
 if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "Nedostaje .venv mapa." }

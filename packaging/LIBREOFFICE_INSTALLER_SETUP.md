@@ -1,6 +1,8 @@
-# Future LibreOffice Installer Setup
+# LibreOffice Installer Setup
 
-LibreOffice download/install is disabled in phase 11A.
+LibreOffice download/install is enabled as an optional online step in phase 11B.
+The Local File Converter setup remains a small online installer and does not
+embed the LibreOffice MSI.
 
 The configuration file is:
 
@@ -8,31 +10,35 @@ The configuration file is:
 packaging/libreoffice_dependency.json
 ```
 
-Before enabling it, Borna must provide and test:
+Pinned LibreOffice package:
 
-- exact LibreOffice version
-- official x64 download URL for that exact version
-- SHA-256 hash of the installer
-- expected `soffice.exe` path
+- Version: `26.2.4`
+- Architecture: Windows x86-64
+- Filename: `LibreOffice_26.2.4_Win_x86-64.msi`
+- URL: `https://download.documentfoundation.org/libreoffice/stable/26.2.4/win/x86_64/LibreOffice_26.2.4_Win_x86-64.msi`
+- Expected size: `372539392` bytes
+- SHA-256: `202f26cda071c5aa4996a5a28412fddceb3891dceb0366982c62650456c0730f`
 
 Required config shape:
 
 ```json
 {
   "ENABLED": true,
-  "VERSION": "exact-version",
+  "VERSION": "26.2.4",
   "ARCHITECTURE": "x64",
-  "DOWNLOAD_URL": "official-version-pinned-url",
-  "SHA256": "expected-sha256",
+  "FILENAME": "LibreOffice_26.2.4_Win_x86-64.msi",
+  "DOWNLOAD_URL": "https://download.documentfoundation.org/libreoffice/stable/26.2.4/win/x86_64/LibreOffice_26.2.4_Win_x86-64.msi",
+  "SHA256": "202f26cda071c5aa4996a5a28412fddceb3891dceb0366982c62650456c0730f",
+  "EXPECTED_FILE_SIZE": 372539392,
   "EXPECTED_SOFFICE_PATH": "C:\\Program Files\\LibreOffice\\program\\soffice.exe"
 }
 ```
 
-Future behavior:
+Installer behavior:
 
 1. Detect whether LibreOffice is already installed.
 2. If it exists, do not offer installation.
-3. If it does not exist, ask whether to download and install the tested version.
+3. If it does not exist, show an unchecked optional download checkbox.
 4. The user may decline and still finish LocalFileConverter installation.
 5. Download only from the official pinned URL.
 6. Verify SHA-256 before running anything.

@@ -1,8 +1,10 @@
 {
-  "ENABLED": false,
-  "VERSION": "",
+  "ENABLED": true,
+  "VERSION": "26.2.4",
   "ARCHITECTURE": "x64",
-  "DOWNLOAD_URL": "",
-  "SHA256": "",
-  "EXPECTED_SOFFICE_PATH": ""
+  "FILENAME": "LibreOffice_26.2.4_Win_x86-64.msi",
+  "DOWNLOAD_URL": "https://download.documentfoundation.org/libreoffice/stable/26.2.4/win/x86_64/LibreOffice_26.2.4_Win_x86-64.msi",
+  "SHA256": "202f26cda071c5aa4996a5a28412fddceb3891dceb0366982c62650456c0730f",
+  "EXPECTED_FILE_SIZE": 372539392,
+  "EXPECTED_SOFFICE_PATH": "C:\\Program Files\\LibreOffice\\program\\soffice.exe"
 }

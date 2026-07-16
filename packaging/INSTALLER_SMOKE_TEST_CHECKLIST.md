@@ -23,6 +23,36 @@
 - Drag-and-drop works.
 - Office conversions show clear behavior based on installed local tools.
 
+## Optional LibreOffice Download
+
+### A. LibreOffice is already installed
+
+- Installer does not show an unnecessary LibreOffice download offer.
+- Installer does not download `LibreOffice_26.2.4_Win_x86-64.msi`.
+- Existing LibreOffice installation is not changed or upgraded automatically.
+- DOCX, PPTX and XLSX to PDF conversions work after install.
+
+### B. LibreOffice is not installed and the user accepts
+
+- Installer shows an optional checkbox:
+  `Download and install LibreOffice 26.2.4 (approximately 355 MB)`.
+- Installer explains that LibreOffice is only required for DOCX, PPTX and XLSX to PDF conversion.
+- MSI downloads from the pinned HTTPS Document Foundation URL.
+- Download progress is visible and can be cancelled.
+- SHA-256 is verified before `msiexec` starts the MSI.
+- LibreOffice MSI opens interactively.
+- Installer waits for the LibreOffice MSI to finish.
+- Downloaded MSI is removed from the temporary folder.
+- After installation, `soffice.exe` is found automatically.
+
+### C. LibreOffice is not installed and the user declines or cancels
+
+- Local File Converter installs normally.
+- No LibreOffice MSI is run without explicit user consent.
+- Image and PDF conversions still work.
+- Office conversions show a clear message that LibreOffice is required.
+- User can install LibreOffice later or choose `soffice.exe` manually in app settings.
+
 ## Upgrade
 
 - Install the same version over an existing installation.
