@@ -15,6 +15,9 @@ LIBREOFFICE_CONFIG = PROJECT_ROOT / "packaging" / "libreoffice_dependency.json"
 THIRD_PARTY_NOTICES = PROJECT_ROOT / "packaging" / "THIRD_PARTY_NOTICES.txt"
 INSTALLER_SCRIPT = PROJECT_ROOT / "packaging" / "LocalFileConverter.iss"
 APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
+TRANSLATION_PATH = (
+    PROJECT_ROOT / "translations" / "local_file_converter_hr.qm"
+)
 ONEDIR_BUNDLE = PROJECT_ROOT / "dist" / "LocalFileConverter"
 PINNED_LIBREOFFICE = {
     "ENABLED": True,
@@ -50,32 +53,38 @@ def main() -> int:
     errors: list[str] = []
 
     if not installer_path.exists():
-        errors.append(f"Setup EXE ne postoji: {installer_path}")
+        errors.append(f"Setup EXE does not exist: {installer_path}")
     elif installer_path.stat().st_size <= 0:
-        errors.append(f"Setup EXE je prazan: {installer_path}")
+        errors.append(f"Setup EXE is empty: {installer_path}")
 
     if version not in installer_path.name:
-        errors.append("Naziv installera ne sadrzi APP_VERSION.")
+        errors.append("Installer name does not contain APP_VERSION.")
 
     if "x64" not in installer_path.name.casefold():
-        errors.append("Naziv installera ne sadrzi x64 oznaku.")
+        errors.append("Installer name does not contain the x64 marker.")
 
     try:
         installer_path.resolve().relative_to(
             (PROJECT_ROOT / "dist" / "LocalFileConverter").resolve()
         )
-        errors.append("Installer output je unutar dist app foldera.")
+        errors.append("Installer output is inside the dist app folder.")
     except ValueError:
         pass
 
     if not THIRD_PARTY_NOTICES.exists():
-        errors.append("THIRD_PARTY_NOTICES.txt ne postoji.")
+        errors.append("THIRD_PARTY_NOTICES.txt does not exist.")
 
     _check_non_empty_file(APP_ICON_PATH, "resources/app_icon.ico", errors)
+    _check_non_empty_file(
+        TRANSLATION_PATH,
+        "translations/local_file_converter_hr.qm",
+        errors,
+    )
     _check_installer_icon_configuration(errors)
     _check_installer_setup_configuration(errors)
     _check_libreoffice_installer_flow(errors)
     _check_bundle_icon(errors)
+    _check_bundle_translation(errors)
 
     config_errors = validate_libreoffice_config(LIBREOFFICE_CONFIG)
     errors.extend(config_errors)
@@ -106,11 +115,11 @@ def _check_non_empty_file(
     errors: list[str],
 ) -> None:
     if not path.exists():
-        errors.append(f"{label} ne postoji: {path}")
+        errors.append(f"{label} does not exist: {path}")
         return
 
     if path.stat().st_size <= 0:
-        errors.append(f"{label} je prazan: {path}")
+        errors.append(f"{label} is empty: {path}")
 
 
 def _check_bundle_icon(errors: list[str]) -> None:
@@ -123,17 +132,40 @@ def _check_bundle_icon(errors: list[str]) -> None:
         if candidate.exists():
             _check_non_empty_file(
                 candidate,
-                "app_icon.ico u ONEDIR bundleu",
+                "app_icon.ico in the ONEDIR bundle",
                 errors,
             )
             return
 
-    errors.append("app_icon.ico nije ukljucen u release ONEDIR bundle.")
+    errors.append("app_icon.ico is not included in the release ONEDIR bundle.")
+
+
+def _check_bundle_translation(errors: list[str]) -> None:
+    candidates = [
+        ONEDIR_BUNDLE
+        / "_internal"
+        / "translations"
+        / "local_file_converter_hr.qm",
+        ONEDIR_BUNDLE / "translations" / "local_file_converter_hr.qm",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            _check_non_empty_file(
+                candidate,
+                "local_file_converter_hr.qm in the ONEDIR bundle",
+                errors,
+            )
+            return
+
+    errors.append(
+        "local_file_converter_hr.qm is not included in the release ONEDIR bundle."
+    )
 
 
 def _check_installer_icon_configuration(errors: list[str]) -> None:
     if not INSTALLER_SCRIPT.exists():
-        errors.append(f"Inno Setup skripta ne postoji: {INSTALLER_SCRIPT}")
+        errors.append(f"Inno Setup script does not exist: {INSTALLER_SCRIPT}")
         return
 
     script_text = INSTALLER_SCRIPT.read_text(encoding="utf-8").casefold()
@@ -145,7 +177,7 @@ def _check_installer_icon_configuration(errors: list[str]) -> None:
 
     for label, snippet in required_snippets.items():
         if snippet.casefold() not in script_text:
-            errors.append(f"Inno Setup skripti nedostaje {label} za app ikonu.")
+            errors.append(f"Inno Setup script is missing {label} for the app icon.")
 
 
 def _check_installer_setup_configuration(errors: list[str]) -> None:
@@ -165,7 +197,7 @@ def _check_installer_setup_configuration(errors: list[str]) -> None:
 
     for label, snippet in required_snippets.items():
         if snippet not in normalized:
-            errors.append(f"Inno Setup skripti nedostaje {label}.")
+            errors.append(f"Inno Setup script is missing {label}.")
 
 
 def _check_libreoffice_installer_flow(errors: list[str]) -> None:
@@ -199,39 +231,39 @@ def _check_libreoffice_installer_flow(errors: list[str]) -> None:
     run_body = _extract_function_body(script_text, "RunLibreOfficeInstaller")
 
     if not run_body:
-        errors.append("RunLibreOfficeInstaller funkcija nije pronadena.")
+        errors.append("RunLibreOfficeInstaller function was not found.")
     else:
         verify_index = run_body.casefold().find("verifylibreofficeinstaller()")
         exec_index = run_body.casefold().find("exec(")
 
         if verify_index < 0:
             errors.append(
-                "RunLibreOfficeInstaller ne poziva VerifyLibreOfficeInstaller."
+                "RunLibreOfficeInstaller does not call VerifyLibreOfficeInstaller."
             )
         elif exec_index < 0:
-            errors.append("RunLibreOfficeInstaller ne pokrece msiexec.")
+            errors.append("RunLibreOfficeInstaller does not start msiexec.")
         elif verify_index > exec_index:
             errors.append(
-                "LibreOffice MSI se pokrece prije SHA-256 provjere."
+                "LibreOffice MSI starts before SHA-256 verification."
             )
 
     if _section_exists(script_text, "UninstallRun"):
-        errors.append("Installer ne smije imati [UninstallRun] za LibreOffice.")
+        errors.append("Installer must not have [UninstallRun] for LibreOffice.")
 
     uninstall_delete = _extract_section(script_text, "UninstallDelete")
 
     if "libreoffice" in uninstall_delete.casefold():
-        errors.append("Uninstall ne smije uklanjati LibreOffice.")
+        errors.append("Uninstall must not remove LibreOffice.")
 
     files_section = _extract_section(script_text, "Files")
 
     if PINNED_LIBREOFFICE["FILENAME"].casefold() in files_section.casefold():
-        errors.append("LibreOffice MSI ne smije biti ukljucen u Setup EXE.")
+        errors.append("LibreOffice MSI must not be included in Setup EXE.")
 
 
 def _read_installer_script_text(errors: list[str]) -> str:
     if not INSTALLER_SCRIPT.exists():
-        errors.append(f"Inno Setup skripta ne postoji: {INSTALLER_SCRIPT}")
+        errors.append(f"Inno Setup script does not exist: {INSTALLER_SCRIPT}")
         return ""
 
     return INSTALLER_SCRIPT.read_text(encoding="utf-8")
@@ -279,7 +311,7 @@ def read_app_version() -> str:
     match = re.search(r'APP_VERSION\s*=\s*"([^"]+)"', constants)
 
     if match is None:
-        raise RuntimeError("APP_VERSION nije pronaden.")
+        raise RuntimeError("APP_VERSION was not found.")
 
     return match.group(1)
 
@@ -288,12 +320,12 @@ def validate_libreoffice_config(path: Path) -> list[str]:
     errors: list[str] = []
 
     if not path.exists():
-        return [f"LibreOffice config ne postoji: {path}"]
+        return [f"LibreOffice config does not exist: {path}"]
 
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
-        return [f"LibreOffice config nije valjan JSON: {error}"]
+        return [f"LibreOffice config is not valid JSON: {error}"]
 
     required_keys = {
         "ENABLED",
@@ -309,28 +341,28 @@ def validate_libreoffice_config(path: Path) -> list[str]:
 
     if missing_keys:
         errors.append(
-            "LibreOffice config nema polja: "
+            "LibreOffice config is missing fields: "
             + ", ".join(sorted(missing_keys))
         )
 
     for key, expected_value in PINNED_LIBREOFFICE.items():
         if data.get(key) != expected_value:
             errors.append(
-                f"LibreOffice {key} nije pinned vrijednost: {expected_value!r}."
+                f"LibreOffice {key} is not the pinned value: {expected_value!r}."
             )
 
     parsed_url = urlparse(str(data.get("DOWNLOAD_URL", "")))
 
     if parsed_url.scheme != "https":
-        errors.append("LibreOffice DOWNLOAD_URL mora koristiti HTTPS.")
+        errors.append("LibreOffice DOWNLOAD_URL must use HTTPS.")
 
     if parsed_url.netloc.casefold() != "download.documentfoundation.org":
         errors.append(
-            "LibreOffice DOWNLOAD_URL mora koristiti sluzbenu documentfoundation.org domenu."
+            "LibreOffice DOWNLOAD_URL must use the official documentfoundation.org domain."
         )
 
     if not re.fullmatch(r"[0-9a-fA-F]{64}", str(data.get("SHA256", ""))):
-        errors.append("LibreOffice SHA256 mora imati 64 heksadecimalna znaka.")
+        errors.append("LibreOffice SHA256 must contain 64 hexadecimal characters.")
 
     return errors
 

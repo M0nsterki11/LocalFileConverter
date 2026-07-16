@@ -14,7 +14,7 @@ def read_app_version() -> str:
     match = re.search(r'APP_VERSION\s*=\s*"([^"]+)"', text)
 
     if match is None:
-        raise RuntimeError("APP_VERSION nije pronaden u app/constants.py")
+        raise RuntimeError("APP_VERSION was not found in app/constants.py")
 
     return match.group(1)
 

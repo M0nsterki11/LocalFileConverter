@@ -7,6 +7,9 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
+TRANSLATION_PATH = (
+    PROJECT_ROOT / "translations" / "local_file_converter_hr.qm"
+)
 
 
 def main() -> int:
@@ -23,23 +26,31 @@ def main() -> int:
     errors: list[str] = []
 
     _check_file(APP_ICON_PATH, errors)
+    _check_file(TRANSLATION_PATH, errors)
     _check_file(exe_path, errors)
 
     resource_root = _find_resource_root(bundle_path)
 
     if resource_root is None:
-        errors.append("resources folder nije pronaden u bundleu")
+        errors.append("The resources folder was not found in the bundle.")
     else:
         _check_file(resource_root / "app_icon.ico", errors)
 
         for qss_name in ("common.qss", "light.qss", "dark.qss"):
             _check_file(resource_root / "themes" / qss_name, errors)
 
+    translation_root = _find_translation_root(bundle_path)
+
+    if translation_root is None:
+        errors.append("The translations folder was not found in the bundle.")
+    else:
+        _check_file(translation_root / "local_file_converter_hr.qm", errors)
+
     if not list(bundle_path.rglob("qwindows.dll")):
-        errors.append("Qt platforms plugin qwindows.dll nije pronaden")
+        errors.append("Qt platforms plugin qwindows.dll was not found.")
 
     if not list(bundle_path.rglob("PySide6*.dll")):
-        errors.append("PySide6 DLL-ovi nisu pronadeni")
+        errors.append("PySide6 DLL files were not found.")
 
     bundle_size = _directory_size(bundle_path)
     print(f"Bundle: {bundle_path}")
@@ -56,11 +67,11 @@ def main() -> int:
 
 def _check_file(path: Path, errors: list[str]) -> None:
     if not path.exists():
-        errors.append(f"Datoteka ne postoji: {path}")
+        errors.append(f"File does not exist: {path}")
         return
 
     if path.is_file() and path.stat().st_size <= 0:
-        errors.append(f"Datoteka je prazna: {path}")
+        errors.append(f"File is empty: {path}")
 
 
 def _find_resource_root(bundle_path: Path) -> Path | None:
@@ -74,6 +85,20 @@ def _find_resource_root(bundle_path: Path) -> Path | None:
             return candidate
 
     matches = list(bundle_path.rglob("resources"))
+    return matches[0] if matches else None
+
+
+def _find_translation_root(bundle_path: Path) -> Path | None:
+    candidates = [
+        bundle_path / "translations",
+        bundle_path / "_internal" / "translations",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    matches = list(bundle_path.rglob("translations"))
     return matches[0] if matches else None
 
 

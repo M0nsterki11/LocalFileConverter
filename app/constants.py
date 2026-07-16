@@ -49,10 +49,10 @@ DISPLAY_FORMAT_NAMES = {
 }
 
 FILE_DIALOG_FILTER = (
-    "Podržane datoteke "
+    "Supported files "
     "(*.jpg *.jpeg *.png *.webp *.pdf *.docx *.pptx *.xlsx);;"
-    "Slike (*.jpg *.jpeg *.png *.webp);;"
-    "PDF datoteke (*.pdf);;"
-    "Office dokumenti (*.docx *.pptx *.xlsx);;"
-    "Sve datoteke (*.*)"
+    "Images (*.jpg *.jpeg *.png *.webp);;"
+    "PDF files (*.pdf);;"
+    "Office documents (*.docx *.pptx *.xlsx);;"
+    "All files (*.*)"
 )

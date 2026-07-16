@@ -11,6 +11,7 @@ from app.exceptions import (
     InsufficientDiskSpaceError,
     OutputDirectoryError,
 )
+from app.i18n import translate
 from utils.file_utils import generate_unique_output_directory
 
 
@@ -32,7 +33,7 @@ def ensure_output_directory_ready(
     try:
         if path.exists() and not path.is_dir():
             raise OutputDirectoryError(
-                "Izlazna putanja postoji, ali nije mapa."
+                _tr("The output path exists, but it is not a folder.")
             )
 
         path.mkdir(parents=True, exist_ok=True)
@@ -40,7 +41,9 @@ def ensure_output_directory_ready(
         raise
     except OSError as error:
         raise OutputDirectoryError(
-            f"Nije moguce stvoriti izlaznu mapu: {error}"
+            _tr("Could not create the output folder: {error}").format(
+                error=error,
+            )
         ) from error
 
     test_path = path / f".lfc_write_test_{uuid4().hex}.tmp"
@@ -50,11 +53,13 @@ def ensure_output_directory_ready(
             test_file.write(b"ok")
     except PermissionError as error:
         raise OutputDirectoryError(
-            "Windows nije dopustio pisanje u izlaznu mapu."
+            _tr("Windows denied write access to the output folder.")
         ) from error
     except OSError as error:
         raise OutputDirectoryError(
-            f"Izlazna mapa nije dostupna za pisanje: {error}"
+            _tr("The output folder is not writable: {error}").format(
+                error=error,
+            )
         ) from error
     finally:
         try:
@@ -121,7 +126,9 @@ def ensure_sufficient_disk_space(
         )
     except OSError as error:
         raise OutputDirectoryError(
-            f"Nije moguce provjeriti slobodan prostor: {error}"
+            _tr("Could not check free disk space: {error}").format(
+                error=error,
+            )
         ) from error
 
     total_required = int(required_bytes) + int(reserve_bytes)
@@ -129,9 +136,13 @@ def ensure_sufficient_disk_space(
     if available_bytes < total_required:
         raise InsufficientDiskSpaceError(
             (
-                "Na disku nema dovoljno slobodnog prostora. "
-                f"Potrebno: {human_readable_size(total_required)}, "
-                f"dostupno: {human_readable_size(available_bytes)}."
+                _tr(
+                    "The disk does not have enough free space. "
+                    "Required: {required}, available: {available}."
+                ).format(
+                    required=human_readable_size(total_required),
+                    available=human_readable_size(available_bytes),
+                )
             ),
             required_bytes=total_required,
             available_bytes=available_bytes,
@@ -172,12 +183,12 @@ def publish_temporary_file(
 
     if not temp_path.exists() or not temp_path.is_file():
         raise OutputDirectoryError(
-            "Privremena izlazna datoteka nije pronadena."
+            _tr("The temporary output file was not found.")
         )
 
     if temp_path.stat().st_size <= 0:
         raise OutputDirectoryError(
-            "Privremena izlazna datoteka je prazna."
+            _tr("The temporary output file is empty.")
         )
 
     final_candidate = _unique_file_candidate(requested_final_path)
@@ -189,7 +200,9 @@ def publish_temporary_file(
         temp_path.rename(final_candidate)
     except OSError as error:
         raise OutputDirectoryError(
-            f"Nije moguce spremiti zavrsnu datoteku: {error}"
+            _tr("Could not save the final file: {error}").format(
+                error=error,
+            )
         ) from error
 
     return final_candidate
@@ -204,7 +217,7 @@ def publish_temporary_directory(
 
     if not temp_path.exists() or not temp_path.is_dir():
         raise OutputDirectoryError(
-            "Privremena izlazna mapa nije pronadena."
+            _tr("The temporary output folder was not found.")
         )
 
     final_candidate = generate_unique_output_directory(
@@ -224,7 +237,9 @@ def publish_temporary_directory(
         temp_path.rename(final_candidate)
     except OSError as error:
         raise OutputDirectoryError(
-            f"Nije moguce spremiti zavrsnu mapu: {error}"
+            _tr("Could not save the final folder: {error}").format(
+                error=error,
+            )
         ) from error
 
     return final_candidate
@@ -238,12 +253,14 @@ def validate_zip_file(zip_path: str | Path) -> None:
             broken_member = archive.testzip()
     except BadZipFile as error:
         raise OutputDirectoryError(
-            "ZIP arhiva nije citljiva nakon spremanja."
+            _tr("The ZIP archive is not readable after saving.")
         ) from error
 
     if broken_member is not None:
         raise OutputDirectoryError(
-            f"ZIP arhiva sadrzi neispravnu datoteku: {broken_member}"
+            _tr(
+                "The ZIP archive contains an invalid file: {file_name}"
+            ).format(file_name=broken_member)
         )
 
 
@@ -290,3 +307,7 @@ def _unique_file_candidate(requested_path: Path) -> Path:
         counter += 1
 
     return candidate
+
+
+def _tr(source_text: str) -> str:
+    return translate("OutputSafety", source_text)

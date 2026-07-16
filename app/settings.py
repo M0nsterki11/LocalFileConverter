@@ -5,6 +5,12 @@ from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QSettings
 
+from app.i18n import (
+    DEFAULT_LANGUAGE,
+    LANGUAGE_KEY,
+    validate_language,
+)
+
 
 DEFAULT_THEME = "system"
 DEFAULT_OUTPUT_DIRECTORY = (
@@ -51,6 +57,7 @@ class AppSettings:
         DEFAULT_MULTI_PAGE_OUTPUT_MODE
     )
     default_office_engine: str = DEFAULT_OFFICE_ENGINE
+    language: str = DEFAULT_LANGUAGE
     last_file_dialog_directory: Path = DEFAULT_OUTPUT_DIRECTORY
 
 
@@ -106,6 +113,13 @@ def load_app_settings() -> AppSettings:
                 DEFAULT_OFFICE_ENGINE,
             )
         ),
+        language=validate_language(
+            _read_string(
+                settings,
+                LANGUAGE_KEY,
+                DEFAULT_LANGUAGE,
+            )
+        ),
         last_file_dialog_directory=validate_dialog_directory(
             _read_string(
                 settings,
@@ -157,6 +171,10 @@ def save_app_settings(app_settings: AppSettings) -> None:
         validate_office_engine(app_settings.default_office_engine),
     )
     settings.setValue(
+        LANGUAGE_KEY,
+        validate_language(app_settings.language),
+    )
+    settings.setValue(
         LAST_FILE_DIALOG_DIRECTORY_KEY,
         str(validate_dialog_directory(
             app_settings.last_file_dialog_directory
@@ -177,6 +195,7 @@ def reset_app_settings() -> AppSettings:
         DEFAULT_PDF_DPI_KEY,
         DEFAULT_MULTI_PAGE_OUTPUT_MODE_KEY,
         DEFAULT_OFFICE_ENGINE_KEY,
+        LANGUAGE_KEY,
         LAST_FILE_DIALOG_DIRECTORY_KEY,
     ):
         settings.remove(key)
@@ -292,6 +311,14 @@ def clear_libreoffice_path() -> None:
     settings = QSettings()
     settings.remove(LIBREOFFICE_PATH_KEY)
     settings.sync()
+
+
+def save_language(language: object) -> str:
+    language_code = validate_language(language)
+    settings = QSettings()
+    settings.setValue(LANGUAGE_KEY, language_code)
+    settings.sync()
+    return language_code
 
 
 def save_window_geometry(

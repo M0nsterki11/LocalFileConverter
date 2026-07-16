@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from app.constants import IMAGE_EXTENSIONS
 from app.conversion_item import normalize_input_path
+from app.i18n import get_translation_manager
 from app.icon_provider import get_app_icon, get_icon
 from converters.base_converter import ConversionCancelledError
 from converters.pdf_converter import convert_images_to_pdf
@@ -108,7 +109,6 @@ class MergeImagesDialog(QDialog):
         parent=None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Spoji slike u jedan PDF")
         self.resize(760, 560)
 
         app_icon = get_app_icon()
@@ -128,6 +128,10 @@ class MergeImagesDialog(QDialog):
 
         self._build_ui()
         self._connect_signals()
+        self.retranslate_ui()
+        get_translation_manager().language_changed.connect(
+            self.retranslate_ui
+        )
         self._refresh_table()
         self._update_output_directory_label()
         self._update_controls()
@@ -137,9 +141,6 @@ class MergeImagesDialog(QDialog):
         root_layout.setSpacing(12)
 
         self.table = QTableWidget(0, 2)
-        self.table.setHorizontalHeaderLabels(
-            ["Redoslijed", "Slika"]
-        )
         self.table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows
         )
@@ -154,11 +155,11 @@ class MergeImagesDialog(QDialog):
         root_layout.addWidget(self.table)
 
         list_button_layout = QHBoxLayout()
-        self.add_button = QPushButton("Dodaj slike")
-        self.move_up_button = QPushButton("Gore")
-        self.move_down_button = QPushButton("Dolje")
-        self.remove_button = QPushButton("Ukloni")
-        self.clear_button = QPushButton("Ocisti listu")
+        self.add_button = QPushButton()
+        self.move_up_button = QPushButton()
+        self.move_down_button = QPushButton()
+        self.remove_button = QPushButton()
+        self.clear_button = QPushButton()
 
         for button in (
             self.add_button,
@@ -178,12 +179,15 @@ class MergeImagesDialog(QDialog):
         self.output_directory_label = QLabel()
         self.output_directory_label.setObjectName("pathLabel")
         self.output_directory_label.setWordWrap(True)
-        self.select_output_button = QPushButton("Promijeni mapu")
+        self.select_output_button = QPushButton()
 
         self.filename_input = QLineEdit("combined.pdf")
         self.filename_input.setMinimumHeight(34)
 
-        options_layout.addWidget(QLabel("Izlazna mapa:"), 0, 0)
+        self.output_directory_title_label = QLabel()
+        self.filename_title_label = QLabel()
+
+        options_layout.addWidget(self.output_directory_title_label, 0, 0)
         options_layout.addWidget(
             self.output_directory_label,
             0,
@@ -194,7 +198,7 @@ class MergeImagesDialog(QDialog):
             0,
             2,
         )
-        options_layout.addWidget(QLabel("Naziv PDF-a:"), 1, 0)
+        options_layout.addWidget(self.filename_title_label, 1, 0)
         options_layout.addWidget(
             self.filename_input,
             1,
@@ -210,27 +214,25 @@ class MergeImagesDialog(QDialog):
         self.progress_bar.setValue(0)
         root_layout.addWidget(self.progress_bar)
 
-        self.status_label = QLabel(
-            "Status: Dodaj najmanje dvije slike."
-        )
+        self.status_label = QLabel()
         self.status_label.setObjectName("statusLabel")
         self.status_label.setWordWrap(True)
         root_layout.addWidget(self.status_label)
 
         action_layout = QHBoxLayout()
         action_layout.addStretch()
-        self.start_button = QPushButton("Spoji u PDF")
+        self.start_button = QPushButton()
         self.start_button.setObjectName("convertButton")
-        self.cancel_button = QPushButton("PREKINI")
+        self.cancel_button = QPushButton()
         self.cancel_button.setObjectName("cancelButton")
         self.cancel_button.setEnabled(False)
-        self.close_button = QPushButton("Zatvori")
+        self.close_button = QPushButton()
 
         action_layout.addWidget(self.start_button)
         action_layout.addWidget(self.cancel_button)
         action_layout.addWidget(self.close_button)
         root_layout.addLayout(action_layout)
-        self._apply_icons_and_tooltips()
+        self._apply_icons()
 
     def _connect_signals(self) -> None:
         self.add_button.clicked.connect(self._add_images)
@@ -252,7 +254,7 @@ class MergeImagesDialog(QDialog):
             self._update_controls
         )
 
-    def _apply_icons_and_tooltips(self) -> None:
+    def _apply_icons(self) -> None:
         self.add_button.setIcon(get_icon(self, "add"))
         self.move_up_button.setIcon(get_icon(self, "up"))
         self.move_down_button.setIcon(get_icon(self, "down"))
@@ -262,28 +264,50 @@ class MergeImagesDialog(QDialog):
         self.start_button.setIcon(get_icon(self, "merge"))
         self.cancel_button.setIcon(get_icon(self, "cancel"))
 
+    def retranslate_ui(self, *_args) -> None:
+        self.setWindowTitle(self.tr("Merge images into one PDF"))
+        self.table.setHorizontalHeaderLabels(
+            [self.tr("Order"), self.tr("Image")]
+        )
+        self.add_button.setText(self.tr("Add images"))
+        self.move_up_button.setText(self.tr("Up"))
+        self.move_down_button.setText(self.tr("Down"))
+        self.remove_button.setText(self.tr("Remove"))
+        self.clear_button.setText(self.tr("Clear list"))
+        self.output_directory_title_label.setText(self.tr("Output folder:"))
+        self.select_output_button.setText(self.tr("Change folder"))
+        self.filename_title_label.setText(self.tr("PDF name:"))
+        self.start_button.setText(self.tr("Merge to PDF"))
+        self.cancel_button.setText(self.tr("CANCEL"))
+        self.close_button.setText(self.tr("Close"))
+
+        if not self.is_running and len(self.image_paths) < 2:
+            self.status_label.setText(
+                self.tr("Status: Add at least two images.")
+            )
+
         self.move_up_button.setToolTip(
-            "Pomice oznacenu sliku jednu poziciju gore."
+            self.tr("Moves the selected image one position up.")
         )
         self.move_down_button.setToolTip(
-            "Pomice oznacenu sliku jednu poziciju dolje."
+            self.tr("Moves the selected image one position down.")
         )
         self.remove_button.setToolTip(
-            "Uklanja oznacenu sliku iz PDF-a."
+            self.tr("Removes the selected image from the PDF.")
         )
         self.start_button.setToolTip(
-            "Spaja slike redoslijedom prikazanim u tablici."
+            self.tr("Merges images in the order shown in the table.")
         )
         self.cancel_button.setToolTip(
-            "Sigurno prekida spajanje i brise nepotpuni PDF."
+            self.tr("Safely cancels merging and removes the incomplete PDF.")
         )
 
     def _add_images(self) -> None:
         file_paths, _ = QFileDialog.getOpenFileNames(
             self,
-            "Odaberi slike",
+            self.tr("Choose images"),
             "",
-            "Slike (*.jpg *.jpeg *.png *.webp);;Sve datoteke (*.*)",
+            self.tr("Images (*.jpg *.jpeg *.png *.webp);;All files (*.*)"),
         )
 
         if not file_paths:
@@ -320,8 +344,10 @@ class MergeImagesDialog(QDialog):
         if skipped_count:
             QMessageBox.information(
                 self,
-                "Neke slike su preskocene",
-                f"Preskoceno stavki: {skipped_count}",
+                self.tr("Some images were skipped"),
+                self.tr("Skipped items: {count}").format(
+                    count=skipped_count,
+                ),
             )
 
     def _move_selected_up(self) -> None:
@@ -372,7 +398,7 @@ class MergeImagesDialog(QDialog):
     def _select_output_directory(self) -> None:
         selected_directory = QFileDialog.getExistingDirectory(
             self,
-            "Odaberi izlaznu mapu",
+            self.tr("Choose output folder"),
             str(self.output_directory),
         )
 
@@ -389,8 +415,8 @@ class MergeImagesDialog(QDialog):
         if len(self.image_paths) < 2:
             QMessageBox.warning(
                 self,
-                "Nedostaju slike",
-                "Odaberi najmanje dvije slike.",
+                self.tr("Images are missing"),
+                self.tr("Choose at least two images."),
             )
             return
 
@@ -401,7 +427,7 @@ class MergeImagesDialog(QDialog):
 
         self.is_running = True
         self.progress_bar.setValue(0)
-        self.status_label.setText("Status: Pokretanje spajanja...")
+        self.status_label.setText(self.tr("Status: Starting merge..."))
         self._update_controls()
 
         self.thread = QThread(self)
@@ -442,30 +468,36 @@ class MergeImagesDialog(QDialog):
             return
 
         self.cancel_button.setEnabled(False)
-        self.status_label.setText("Status: Prekid spajanja...")
+        self.status_label.setText(self.tr("Status: Cancelling merge..."))
         self.worker.cancel()
 
     def _show_worker_status(self, message: str) -> None:
-        self.status_label.setText(f"Status: {message}")
+        self.status_label.setText(
+            self.tr("Status: {message}").format(message=message)
+        )
 
     def _merge_finished(self, result_path: str) -> None:
         self.progress_bar.setValue(100)
         self.status_label.setText(
-            f"Status: Slike su spojene u PDF:\n{result_path}"
+            self.tr("Status: Images were merged into a PDF:\n{path}").format(
+                path=result_path,
+            )
         )
 
     def _merge_failed(self, error_message: str) -> None:
         self.progress_bar.setValue(0)
-        self.status_label.setText("Status: Spajanje nije uspjelo.")
+        self.status_label.setText(self.tr("Status: Merge failed."))
         QMessageBox.critical(
             self,
-            "Greska spajanja",
+            self.tr("Merge error"),
             error_message,
         )
 
     def _merge_cancelled(self, message: str) -> None:
         self.progress_bar.setValue(0)
-        self.status_label.setText(f"Status: {message}")
+        self.status_label.setText(
+            self.tr("Status: {message}").format(message=message)
+        )
 
     def _thread_finished(self) -> None:
         self.is_running = False
@@ -528,8 +560,8 @@ class MergeImagesDialog(QDialog):
         if self.is_running:
             QMessageBox.information(
                 self,
-                "Spajanje je u tijeku",
-                "Prvo prekini ili pricekaj zavrsetak spajanja.",
+                self.tr("Merge is running"),
+                self.tr("Cancel first or wait for merging to finish."),
             )
             event.ignore()
             return

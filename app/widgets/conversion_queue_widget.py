@@ -37,17 +37,7 @@ class ConversionQueueWidget(QWidget):
         self._locked = False
 
         self.table = QTableWidget(0, 7)
-        self.table.setHorizontalHeaderLabels(
-            [
-                "Naziv datoteke",
-                "Ulazni format",
-                "Izlazni format",
-                "Status",
-                "Napredak",
-                "Rezultat ili greska",
-                "Ukloni",
-            ]
-        )
+        self.retranslate_ui()
         self.table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows
         )
@@ -96,6 +86,30 @@ class ConversionQueueWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.table)
+
+    def retranslate_ui(self) -> None:
+        self.table.setHorizontalHeaderLabels(
+            [
+                self.tr("File name"),
+                self.tr("Input format"),
+                self.tr("Output format"),
+                self.tr("Status"),
+                self.tr("Progress"),
+                self.tr("Result or error"),
+                self.tr("Remove"),
+            ]
+        )
+
+        for row in range(self.table.rowCount()):
+            item_id = self._item_id_for_row(row)
+
+            if item_id is not None and item_id in self._items_by_id:
+                self.update_item(self._items_by_id[item_id])
+
+            remove_button = self.table.cellWidget(row, self.COLUMN_REMOVE)
+
+            if isinstance(remove_button, QPushButton):
+                self._retranslate_remove_button(remove_button)
 
     def set_items(
         self,
@@ -271,11 +285,9 @@ class ConversionQueueWidget(QWidget):
         result_item.setToolTip(self._result_detail(item))
         self.table.setItem(row, self.COLUMN_RESULT, result_item)
 
-        remove_button = QPushButton("Ukloni")
+        remove_button = QPushButton()
         remove_button.setIcon(get_icon(self, "remove"))
-        remove_button.setToolTip(
-            "Uklanja ovu stavku dok grupna konverzija nije aktivna."
-        )
+        self._retranslate_remove_button(remove_button)
         remove_button.clicked.connect(
             lambda checked=False, item_id=item.unique_id: (
                 self.remove_requested.emit(item_id)
@@ -360,6 +372,12 @@ class ConversionQueueWidget(QWidget):
             & ~Qt.ItemFlag.ItemIsEditable
         )
         return item
+
+    def _retranslate_remove_button(self, button: QPushButton) -> None:
+        button.setText(self.tr("Remove"))
+        button.setToolTip(
+            self.tr("Removes this item while batch conversion is not active.")
+        )
 
     @staticmethod
     def _result_text(item: ConversionItem) -> str:

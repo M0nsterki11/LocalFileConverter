@@ -12,6 +12,7 @@ from app.exceptions import (
     InputFileError,
     UnsupportedFormatError,
 )
+from app.i18n import translate
 
 
 def validate_input_file_for_queue(
@@ -31,7 +32,7 @@ def validate_image_file(input_file: str | Path) -> Path:
 
     if path.suffix.lower() not in IMAGE_EXTENSIONS:
         raise UnsupportedFormatError(
-            "Odabrana datoteka nije podrzana slika."
+            _tr("The selected file is not a supported image.")
         )
 
     try:
@@ -39,11 +40,13 @@ def validate_image_file(input_file: str | Path) -> Path:
             image.verify()
     except UnidentifiedImageError as error:
         raise CorruptedFileError(
-            "Slika je ostecena ili nije valjana slikovna datoteka."
+            _tr("The image is corrupted or is not a valid image file.")
         ) from error
     except OSError as error:
         raise CorruptedFileError(
-            f"Slika se ne moze otvoriti ili je ostecena: {error}"
+            _tr("The image cannot be opened or is corrupted: {error}").format(
+                error=error,
+            )
         ) from error
 
     return path
@@ -54,25 +57,29 @@ def validate_pdf_file(input_file: str | Path) -> Path:
 
     if path.suffix.lower() != ".pdf":
         raise UnsupportedFormatError(
-            "Odabrana datoteka nije PDF."
+            _tr("The selected file is not a PDF.")
         )
 
     try:
         with pymupdf.open(path) as document:
             if document.needs_pass:
                 raise CorruptedFileError(
-                    "PDF je zakljucan lozinkom i ne moze se obraditi."
+                    _tr(
+                        "The PDF is password-protected and cannot be processed."
+                    )
                 )
 
             if document.page_count <= 0:
                 raise CorruptedFileError(
-                    "PDF dokument nema nijednu stranicu."
+                    _tr("The PDF document does not contain any pages.")
                 )
     except CorruptedFileError:
         raise
     except (RuntimeError, ValueError, OSError) as error:
         raise CorruptedFileError(
-            f"PDF se ne moze otvoriti ili je ostecen: {error}"
+            _tr("The PDF cannot be opened or is corrupted: {error}").format(
+                error=error,
+            )
         ) from error
 
     return path
@@ -83,27 +90,27 @@ def _validate_basic_input(input_file: str | Path) -> Path:
 
     if not path.exists():
         raise InputFileError(
-            "Odabrana datoteka vise ne postoji."
+            _tr("The selected file no longer exists.")
         )
 
     if not path.is_file():
         raise InputFileError(
-            "Odabrana putanja nije datoteka."
+            _tr("The selected path is not a file.")
         )
 
     if path.suffix.lower() not in SUPPORTED_INPUT_EXTENSIONS:
         raise UnsupportedFormatError(
-            "Odabrani format nije podrzan."
+            _tr("The selected format is not supported.")
         )
 
     try:
         if path.stat().st_size <= 0:
             raise InputFileError(
-                "Odabrana datoteka je prazna."
+                _tr("The selected file is empty.")
             )
     except OSError as error:
         raise FileLockedError(
-            "Datoteku trenutacno koristi drugi program."
+            _tr("The file is currently being used by another program.")
         ) from error
 
     try:
@@ -111,11 +118,17 @@ def _validate_basic_input(input_file: str | Path) -> Path:
             file.read(1)
     except PermissionError as error:
         raise FileLockedError(
-            "Datoteku trenutacno koristi drugi program."
+            _tr("The file is currently being used by another program.")
         ) from error
     except OSError as error:
         raise FileLockedError(
-            f"Datoteka nije dostupna za citanje: {error}"
+            _tr("The file is not available for reading: {error}").format(
+                error=error,
+            )
         ) from error
 
     return path
+
+
+def _tr(source_text: str) -> str:
+    return translate("InputValidation", source_text)

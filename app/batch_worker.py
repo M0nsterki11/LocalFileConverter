@@ -11,6 +11,7 @@ from app.conversion_item import (
     ConversionItem,
     ConversionStatus,
 )
+from app.i18n import translate
 from converters.base_converter import (
     ConversionCancelledError,
     check_cancelled,
@@ -136,7 +137,7 @@ class BatchConversionWorker(QObject):
 
                 item.set_status(
                     ConversionStatus.CANCELLED,
-                    "Konverziju je prekinuo korisnik.",
+                    _tr("The conversion was cancelled by the user."),
                 )
                 item.error_message = item.status_message
                 cancelled_count += 1
@@ -198,7 +199,9 @@ class BatchConversionWorker(QObject):
 
             item.set_status(
                 ConversionStatus.CANCELLED,
-                "Grupna konverzija je prekinuta prije pokretanja stavke.",
+                _tr(
+                    "Batch conversion was cancelled before this item started."
+                ),
             )
             item.error_message = item.status_message
             self.item_cancelled.emit(item.unique_id)
@@ -219,7 +222,9 @@ class BatchConversionWorker(QObject):
 
             item.set_status(
                 ConversionStatus.CANCELLED,
-                "Grupna konverzija je prekinuta prije pokretanja stavke.",
+                _tr(
+                    "Batch conversion was cancelled before this item started."
+                ),
             )
             item.error_message = item.status_message
             self.item_cancelled.emit(item.unique_id)
@@ -236,3 +241,7 @@ class BatchConversionWorker(QObject):
                 result_path.unlink(missing_ok=True)
         except OSError:
             pass
+
+
+def _tr(source_text: str) -> str:
+    return translate("BatchWorker", source_text)

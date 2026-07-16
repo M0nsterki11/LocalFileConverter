@@ -5,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 from uuid import uuid4
 
+from app.i18n import translate
 from app.settings import (
     DEFAULT_IMAGE_QUALITY,
     DEFAULT_MULTI_PAGE_OUTPUT_MODE,
@@ -29,11 +30,11 @@ class ConversionStatus(Enum):
     @property
     def display_label(self) -> str:
         return {
-            ConversionStatus.PENDING: "Na cekanju",
-            ConversionStatus.CONVERTING: "Pretvaranje",
-            ConversionStatus.SUCCESS: "Uspjesno",
-            ConversionStatus.FAILED: "Greska",
-            ConversionStatus.CANCELLED: "Prekinuto",
+            ConversionStatus.PENDING: translate("ConversionStatus", "Pending"),
+            ConversionStatus.CONVERTING: translate("ConversionStatus", "Converting"),
+            ConversionStatus.SUCCESS: translate("ConversionStatus", "Success"),
+            ConversionStatus.FAILED: translate("ConversionStatus", "Error"),
+            ConversionStatus.CANCELLED: translate("ConversionStatus", "Cancelled"),
         }[self]
 
 
@@ -113,7 +114,10 @@ def create_conversion_item(
 
     if not output_formats:
         raise ValueError(
-            "Odabrani format trenutačno nije podržan."
+            translate(
+                "ConversionItem",
+                "The selected format is currently not supported.",
+            )
         )
 
     return ConversionItem(

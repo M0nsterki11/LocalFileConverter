@@ -1,60 +1,65 @@
 Local File Converter
 ====================
 
-Verzija: 0.5.0
+Version: 0.5.0
 
-Local File Converter je Windows desktop aplikacija napravljena u Pythonu
-i PySide6. Obrada datoteka odvija se lokalno na racunalu; dokumenti se
-ne salju na internetski servis.
+Local File Converter is a Windows desktop application built with Python and
+PySide6. File processing happens locally on the computer; documents are not
+sent to an internet service.
 
-Originalne datoteke se ne mijenjaju. Rezultati se najprije spremaju
-kao privremeni `.part` zapis ili privremena mapa, a zavrsni naziv se
-objavljuje tek nakon uspjesnog dovrsetka konverzije. Ako konverzija
-ne uspije ili je korisnik prekine, aplikacija brise samo svoje
-privremene nepotpune rezultate.
+Original files are not modified. Results are first written as temporary `.part`
+files or temporary folders, and the final name is published only after a
+successful conversion. If conversion fails or the user cancels it, the app
+removes only its own incomplete temporary results.
 
-Podrzane konverzije
--------------------
+Supported Conversions
+---------------------
 
-- JPG, PNG i WEBP konverzije slika
-- Slike u PDF
-- PDF stranice u JPG ili PNG
-- Sve PDF stranice ili odabrani rasponi stranica
-- Vise PDF stranica kao mapa ili ZIP arhiva
-- Automatski ZIP kada renderirane PDF stranice predu 100 MB
-- DOCX, PPTX i XLSX u PDF kroz lokalni Office alat
-- Grupna konverzija sa statusom i napretkom po datoteci
-- Vise slika spojeno u jedan PDF
+- JPG, PNG, and WEBP image conversions
+- Images to PDF
+- PDF pages to JPG or PNG
+- All PDF pages or selected page ranges
+- Multiple PDF pages as a folder or ZIP archive
+- Automatic ZIP output when rendered PDF pages exceed 100 MB
+- DOCX, PPTX, and XLSX to PDF through a local Office tool
+- Batch conversion with per-file status and progress
+- Multiple images merged into one PDF
 
-Office konverzija
+Office Conversion
 -----------------
 
-Office konverzija koristi lokalno instalirane alate. Trenutna
-implementacija podrzava LibreOffice kroz `soffice.exe`; aplikacija ga
-moze pronaci automatski ili koristiti rucno odabranu putanju.
+Office conversion uses locally installed tools. The current implementation
+supports LibreOffice through `soffice.exe`; the app can detect it automatically
+or use a manually selected path.
 
-Logovi i greske
+Localization
+------------
+
+English is the default source and UI language. The app does not automatically
+switch based on the Windows display language. Users can choose English or
+Croatian in Settings, and the change is applied at runtime without restarting.
+
+Logs and Errors
 ---------------
 
-Aplikacija sprema lokalni tehnicki log za dijagnostiku gresaka:
+The app writes a local technical log for error diagnostics:
 
 `%LOCALAPPDATA%\LocalFileConverter\logs\app.log`
 
-Ako `%LOCALAPPDATA%` nije dostupan, koristi se fallback u korisnickom
-home direktoriju:
+If `%LOCALAPPDATA%` is not available, it falls back to the user's home folder:
 
 `%USERPROFILE%\AppData\Local\LocalFileConverter\logs`
 
-Log se rotira na 2 MB i cuva do 5 backup datoteka. Log ne sadrzi
-sadrzaj dokumenata, slika, OCR tekst ni lozinke. Mapu s logovima mozes
-otvoriti iz Settings ili About dijaloga.
+The log rotates at 2 MB and keeps up to 5 backup files. It does not contain
+document contents, image contents, OCR text, or passwords. The log folder can be
+opened from Settings or About.
 
-Kod greske korisnik vidi kratku poruku na hrvatskom, a tehnicki detalji
-i traceback spremaju se u log. Jedna neuspjela stavka u batch konverziji
-ne zaustavlja ostale stavke.
+When an error occurs, the user sees a short message and technical details are
+saved to the log. One failed item in a batch conversion does not stop later
+items.
 
-Pokretanje iz sourcea
----------------------
+Running From Source
+-------------------
 
 ```powershell
 python -m venv .venv
@@ -62,19 +67,40 @@ python -m venv .venv
 .\.venv\Scripts\python.exe main.py
 ```
 
-Development testovi
--------------------
+Development Tests
+-----------------
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Building the Windows executable
+Translations
+------------
+
+Compile Qt translation resources before release packaging:
+
+```powershell
+.\scripts\build_translations.ps1
+```
+
+The Croatian translation source is:
+
+```text
+translations\local_file_converter_hr.ts
+```
+
+The compiled runtime file is:
+
+```text
+translations\local_file_converter_hr.qm
+```
+
+Building the Windows Executable
 -------------------------------
 
-Primary release format je PyInstaller ONEDIR. Installer ce doci u
-sljedecoj fazi; za sada se distribuira cijeli folder iz `dist`.
+The primary release format is PyInstaller ONEDIR. Distribute the whole folder
+from `dist`, not only the executable.
 
 ```powershell
 python -m venv .venv
@@ -82,88 +108,87 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 ```
 
-Debug ONEDIR build s konzolom:
+Debug ONEDIR build with a console:
 
 ```powershell
 .\scripts\build_debug.ps1
 ```
 
-Release ONEDIR build bez konzole:
+Release ONEDIR build without a console:
 
 ```powershell
 .\scripts\build_release.ps1
 ```
 
-Zavrsni EXE nalazi se ovdje:
+The final EXE is here:
 
 ```text
 dist\LocalFileConverter\LocalFileConverter.exe
 ```
 
-Za pokretanje na drugom racunalu kopiraj cijeli folder:
+For another computer, copy the entire folder:
 
 ```text
 dist\LocalFileConverter\
 ```
 
-Nemoj kopirati samo `.exe`, jer ONEDIR build treba `_internal`,
-PySide6 DLL-ove, Qt plugine i runtime resurse.
+Do not copy only `.exe`; the ONEDIR build needs `_internal`, PySide6 DLLs, Qt
+plugins, runtime resources, and translations.
 
-Eksperimentalni ONEFILE build:
+Experimental ONEFILE build:
 
 ```powershell
 .\scripts\build_onefile.ps1
 ```
 
-ONEFILE nije preporuceni release format dok se ne potvrdi stabilnost.
-Microsoft Office i LibreOffice se ne ugraduju u build; aplikacija koristi
-lokalne instalacije ako postoje. Build trenutno nije digitalno potpisan,
-pa Windows SmartScreen moze prikazati upozorenje.
+ONEFILE is not the recommended release format until stability is confirmed.
+Microsoft Office and LibreOffice are not embedded in the app build; the app
+uses local installations when available. The build is not digitally signed yet,
+so Windows SmartScreen may show a warning.
 
 Windows Installer
 -----------------
 
-Installer se gradi pomocu Inno Setupa i koristi stabilni ONEDIR build iz:
+The installer is built with Inno Setup and uses the stable ONEDIR build from:
 
 ```text
 dist\LocalFileConverter\
 ```
 
-Instaliraj Inno Setup 6 sa sluzbene stranice, zatim pokreni:
+Install Inno Setup 6 from the official website, then run:
 
 ```powershell
 .\scripts\build_installer.ps1
 ```
 
-Ako je ONEDIR build vec svjez, mozes preskociti app build:
+If the ONEDIR build is already fresh, the app build can be skipped:
 
 ```powershell
 .\scripts\build_installer.ps1 -SkipAppBuild
 ```
 
-Zavrsni Setup EXE nalazi se ovdje:
+The final Setup EXE is here:
 
 ```text
 installer_output\LocalFileConverter_Setup_0.5.0_x64.exe
 ```
 
-Installer je per-user i instalira aplikaciju u:
+The installer is per-user and installs the app into:
 
 ```text
 %LOCALAPPDATA%\Programs\LocalFileConverter
 ```
 
-Microsoft Office nije ukljucen u installer. LibreOffice download jos nije
-aktiviran; konfiguracija za buducu fiksnu LibreOffice verziju nalazi se u
-`packaging\libreoffice_dependency.json` i mora imati tocnu verziju, sluzbeni
-URL i SHA-256 prije nego se omoguci.
+Microsoft Office is not included in the installer. Optional LibreOffice download
+is controlled by `packaging\libreoffice_dependency.json`, which must keep the
+pinned version, official URL, expected size, and SHA-256.
 
-Trenutni installer nije digitalno potpisan. Windows SmartScreen moze prikazati
-Unknown publisher. `installer_output/` se ne commita; Setup EXE se kasnije
-objavljuje kao GitHub Release asset.
+The current installer is not digitally signed. Windows SmartScreen may show
+Unknown publisher. `installer_output/` is not committed; Setup EXE files are
+published later as GitHub Release assets.
 
 Screenshot
 ----------
 
-Screenshot placeholder: ovdje dodati screenshot aplikacije kada bude
-snimljen za repozitorij.
+Screenshot placeholder: add an application screenshot here when one is captured
+for the repository.

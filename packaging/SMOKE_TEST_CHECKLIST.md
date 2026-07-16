@@ -36,7 +36,7 @@ Copy the whole `dist\LocalFileConverter\` folder when testing on another PC.
 
 - Multiple mixed files.
 - One corrupted item does not stop later items.
-- Failed item can be retried with "Ponovi neuspjele".
+- Failed item can be retried with "Retry failed".
 - Cancellation during a large conversion.
 
 ## Office

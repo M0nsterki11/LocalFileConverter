@@ -7,7 +7,7 @@ from app.settings import DEFAULT_OUTPUT_DIRECTORY
 
 
 def get_default_output_directory() -> Path:
-    """Vraća zadanu izlaznu mapu aplikacije."""
+    """Return the application's default output directory."""
     return DEFAULT_OUTPUT_DIRECTORY
 
 
@@ -18,13 +18,13 @@ def generate_unique_output_path(
     name_suffix: str = "",
 ) -> Path:
     """
-    Generira jedinstvenu izlaznu putanju bez prepisivanja datoteka.
+    Generate a unique output path without overwriting files.
 
-    Primjeri:
-    slika.png
-    slika_1.png
-    dokument_pages.zip
-    dokument_pages_1.zip
+    Examples:
+    image.png
+    image_1.png
+    document_pages.zip
+    document_pages_1.zip
     """
     input_path = Path(input_file)
     output_path = Path(output_directory)
@@ -55,12 +55,12 @@ def generate_unique_output_directory(
     name_suffix: str = "_pages",
 ) -> Path:
     """
-    Generira jedinstveni naziv izlazne mape.
+    Generate a unique output directory name.
 
-    Primjeri:
-    dokument_pages
-    dokument_pages_1
-    dokument_pages_2
+    Examples:
+    document_pages
+    document_pages_1
+    document_pages_2
     """
     input_path = Path(input_file)
     output_path = Path(output_directory)
@@ -78,7 +78,7 @@ def generate_unique_output_directory(
 
 
 def open_directory(directory: str | Path) -> bool:
-    """Stvara mapu ako ne postoji i otvara je u Windows Exploreru."""
+    """Create the directory if needed and open it in Windows Explorer."""
     path = Path(directory)
     path.mkdir(parents=True, exist_ok=True)
 

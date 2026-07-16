@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 from app.constants import OFFICE_EXTENSIONS
 from app.exceptions import ConversionError, DependencyNotFoundError
+from app.i18n import translate
 from converters.base_converter import (
     CancelCheck,
     ConversionCancelledError,
@@ -33,7 +34,7 @@ StatusCallback = Callable[[str], None]
 
 
 class OfficeConversionError(ConversionError):
-    """Greška nastala tijekom LibreOffice konverzije."""
+    """Error raised during LibreOffice conversion."""
 
 
 OFFICE_CONVERSION_TIMEOUT_SECONDS = 15 * 60
@@ -48,10 +49,10 @@ def convert_office_to_pdf(
     status_callback: StatusCallback | None = None,
 ) -> Path:
     """
-    Pretvara DOCX, PPTX ili XLSX u PDF pomoću LibreOfficea.
+    Convert DOCX, PPTX, or XLSX to PDF with LibreOffice.
 
-    Svaka konverzija koristi zaseban privremeni LibreOffice profil.
-    Originalna datoteka ostaje netaknuta.
+    Every conversion uses a separate temporary LibreOffice profile.
+    The original file remains untouched.
     """
     input_path = Path(input_file)
     output_path = ensure_output_directory_ready(output_directory)
@@ -76,14 +77,16 @@ def convert_office_to_pdf(
         )
     except OSError as error:
         raise OfficeConversionError(
-            f"Nije moguće stvoriti izlaznu mapu:\n{error}"
+            _tr("Could not create the output folder:\n{error}").format(
+                error=error,
+            )
         ) from error
 
     check_cancelled(cancel_check)
 
     _emit_status(
         status_callback,
-        "Priprema LibreOffice konverzije...",
+        _tr("Preparing LibreOffice conversion..."),
     )
     _emit_progress(progress_callback, 10)
 
@@ -113,7 +116,9 @@ def convert_office_to_pdf(
 
         _emit_status(
             status_callback,
-            f"Pretvaranje datoteke {input_path.name} u PDF...",
+            _tr("Converting file {file_name} to PDF...").format(
+                file_name=input_path.name,
+            ),
         )
         _emit_progress(progress_callback, 30)
 
@@ -134,7 +139,7 @@ def convert_office_to_pdf(
         _emit_progress(progress_callback, 80)
         _emit_status(
             status_callback,
-            "Provjera LibreOffice rezultata...",
+            _tr("Checking LibreOffice result..."),
         )
 
         if process.returncode != 0:
@@ -170,7 +175,9 @@ def convert_office_to_pdf(
 
         _emit_status(
             status_callback,
-            f"Spremanje datoteke {result_path.name}...",
+            _tr("Saving file {file_name}...").format(
+                file_name=result_path.name,
+            ),
         )
         _emit_progress(progress_callback, 90)
 
@@ -186,7 +193,9 @@ def convert_office_to_pdf(
         except OSError as error:
             cleanup_temporary_path(temporary_result_path)
             raise OfficeConversionError(
-                f"Nije moguće spremiti PDF rezultat:\n{error}"
+                _tr("Could not save the PDF result:\n{error}").format(
+                    error=error,
+                )
             ) from error
         except Exception:
             cleanup_temporary_path(temporary_result_path)
@@ -194,14 +203,15 @@ def convert_office_to_pdf(
 
     if not result_path.exists():
         raise OfficeConversionError(
-            "LibreOffice je završio konverziju, "
-            "ali PDF rezultat nije pronađen."
+            _tr(
+                "LibreOffice finished the conversion, but the PDF result was not found."
+            )
         )
 
     _emit_progress(progress_callback, 100)
     _emit_status(
         status_callback,
-        "Office dokument uspješno je pretvoren u PDF.",
+        _tr("The Office document was converted to PDF successfully."),
     )
 
     return result_path
@@ -215,18 +225,19 @@ def _validate_conversion_input(
 
     if not input_path.exists() or not input_path.is_file():
         raise OfficeConversionError(
-            "Odabrani Office dokument ne postoji."
+            _tr("The selected Office document does not exist.")
         )
 
     if input_path.suffix.lower() not in OFFICE_EXTENSIONS:
         raise OfficeConversionError(
-            "Podržani su samo DOCX, PPTX i XLSX dokumenti."
+            _tr("Only DOCX, PPTX, and XLSX documents are supported.")
         )
 
     if not is_valid_libreoffice_executable(soffice_path):
         raise DependencyNotFoundError(
-            "LibreOffice nije pronađen. "
-            "Odaberi valjanu soffice.exe datoteku."
+            _tr(
+                "LibreOffice was not found. Choose a valid soffice.exe file."
+            )
         )
 
 
@@ -275,17 +286,19 @@ def _start_libreoffice_process(
 
     except FileNotFoundError as error:
         raise OfficeConversionError(
-            "LibreOffice izvršna datoteka nije pronađena."
+            _tr("The LibreOffice executable was not found.")
         ) from error
 
     except PermissionError as error:
         raise OfficeConversionError(
-            "Windows nije dopustio pokretanje LibreOfficea."
+            _tr("Windows denied permission to start LibreOffice.")
         ) from error
 
     except OSError as error:
         raise OfficeConversionError(
-            f"LibreOffice se nije mogao pokrenuti:\n{error}"
+            _tr("LibreOffice could not be started:\n{error}").format(
+                error=error,
+            )
         ) from error
 
 
@@ -300,7 +313,7 @@ def _wait_for_process(
             _stop_process(process)
 
             raise ConversionCancelledError(
-                "Konverziju je prekinuo korisnik."
+                _tr("The conversion was cancelled by the user.")
             )
 
         elapsed_seconds = time.monotonic() - started_at
@@ -309,8 +322,9 @@ def _wait_for_process(
             _stop_process(process)
 
             raise OfficeConversionError(
-                "LibreOffice konverzija predugo traje "
-                "i automatski je prekinuta."
+                _tr(
+                    "LibreOffice conversion took too long and was cancelled automatically."
+                )
             )
 
         time.sleep(0.1)
@@ -324,10 +338,10 @@ def _stop_process(
     process: subprocess.Popen[str],
 ) -> None:
     """
-    Zaustavlja LibreOffice i njegove pomoćne procese.
+    Stop LibreOffice and its helper processes.
 
-    Na Windowsu taskkill /T zaustavlja cijelo stablo procesa,
-    uključujući soffice.bin koji može držati privremene datoteke.
+    On Windows, taskkill /T stops the whole process tree, including
+    soffice.bin, which can keep temporary files locked.
     """
     if process.poll() is not None:
         return
@@ -359,7 +373,7 @@ def _stop_process(
         except (subprocess.TimeoutExpired, OSError):
             pass
 
-        # Windowsu dajemo trenutak da otpusti zaključane datoteke.
+        # Give Windows a moment to release locked files.
         time.sleep(0.3)
         return
 
@@ -408,12 +422,13 @@ def _build_process_error_message(
     )
 
     message = (
-        "LibreOffice nije uspio pretvoriti dokument. "
-        f"Završni kod: {return_code}."
+        _tr(
+            "LibreOffice could not convert the document. Exit code: {return_code}."
+        ).format(return_code=return_code)
     )
 
     if details:
-        message += f"\n\nDetalji:\n{details}"
+        message += _tr("\n\nDetails:\n{details}").format(details=details)
 
     return message
 
@@ -428,12 +443,13 @@ def _build_missing_result_message(
     )
 
     message = (
-        "LibreOffice nije stvorio PDF rezultat. "
-        "Dokument može biti oštećen, zaključan ili nepodržan."
+        _tr(
+            "LibreOffice did not create a PDF result. The document may be corrupted, locked, or unsupported."
+        )
     )
 
     if details:
-        message += f"\n\nDetalji:\n{details}"
+        message += _tr("\n\nDetails:\n{details}").format(details=details)
 
     return message
 
@@ -468,3 +484,7 @@ def _emit_status(
 ) -> None:
     if callback is not None:
         callback(message)
+
+
+def _tr(source_text: str) -> str:
+    return translate("OfficeConverter", source_text)

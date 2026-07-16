@@ -10,6 +10,7 @@ from app.constants import (
 )
 from app.dialogs.error_dialog import ErrorDetailsDialog
 from app.icon_provider import get_app_icon
+from app.i18n import get_translation_manager, translate
 from app.main_window import MainWindow
 from app.settings import load_app_settings
 from app.theme_manager import ThemeManager
@@ -41,6 +42,8 @@ def main() -> int:
         app.setWindowIcon(app_icon)
 
     app_settings = load_app_settings()
+    get_translation_manager().set_language(app_settings.language)
+
     theme_manager = ThemeManager()
     theme_manager.apply_theme(app, app_settings.theme)
 
@@ -77,16 +80,18 @@ def _install_global_exception_hook() -> None:
 
         try:
             error_info = ErrorInfo(
-                title="Neocekivana greska",
+                title=translate("Main", "Unexpected error"),
                 message=(
-                    "Dogodila se neocekivana greska. "
-                    "Detalji su spremljeni u log."
+                    translate(
+                        "Main",
+                        "An unexpected error occurred. Details were saved to the log.",
+                    )
                 ),
                 technical_detail=sanitize_for_log(details),
             )
             ErrorDetailsDialog(
                 error_info,
-                close_button_text="Zatvori",
+                close_button_text=translate("Main", "Close"),
             ).exec()
         except Exception:
             return

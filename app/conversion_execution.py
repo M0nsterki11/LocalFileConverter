@@ -12,6 +12,7 @@ from app.constants import (
     OFFICE_EXTENSIONS,
 )
 from app.exceptions import DependencyNotFoundError, UnsupportedFormatError
+from app.i18n import translate
 from app.settings import (
     DEFAULT_IMAGE_QUALITY,
     DEFAULT_MULTI_PAGE_OUTPUT_MODE,
@@ -192,12 +193,12 @@ def _run_converter(
     if extension in OFFICE_EXTENSIONS:
         if output_format != "PDF":
             raise UnsupportedFormatError(
-                "Office dokumenti trenutno se mogu pretvoriti samo u PDF."
+                _tr("Office documents can currently only be converted to PDF.")
             )
 
         if libreoffice_path is None:
             raise DependencyNotFoundError(
-                "LibreOffice putanja nije postavljena."
+                _tr("LibreOffice path is not configured.")
             )
 
         return convert_office_to_pdf(
@@ -210,7 +211,7 @@ def _run_converter(
         )
 
     raise UnsupportedFormatError(
-        "Odabrani format jos nije podrzan za konverziju."
+        _tr("The selected format is not supported for conversion yet.")
     )
 
 
@@ -253,3 +254,7 @@ def _log_success(
         sanitize_path(result_path),
         duration_seconds,
     )
+
+
+def _tr(source_text: str) -> str:
+    return translate("ConversionExecution", source_text)

@@ -13,6 +13,7 @@ from app.exceptions import (
     OutputDirectoryError,
     UnsupportedFormatError,
 )
+from app.i18n import translate
 from utils.logging_utils import sanitize_for_log
 
 
@@ -31,96 +32,122 @@ def exception_to_error_info(error: BaseException) -> ErrorInfo:
 
     if isinstance(error, ConversionCancelledError):
         return ErrorInfo(
-            title="Konverzija je prekinuta",
-            message="Konverziju je prekinuo korisnik.",
+            title=_tr("Conversion was cancelled"),
+            message=_tr("The conversion was cancelled by the user."),
             technical_detail=technical_detail,
         )
 
     if isinstance(error, FileNotFoundError):
         return ErrorInfo(
-            title="Datoteka nije pronadena",
-            message="Odabrana datoteka vise ne postoji.",
+            title=_tr("File was not found"),
+            message=_tr("The selected file no longer exists."),
             technical_detail=technical_detail,
-            suggestion="Provjeri je li datoteka premjestena ili obrisana.",
+            suggestion=_tr("Check whether the file was moved or deleted."),
         )
 
     if isinstance(error, PermissionError):
         return ErrorInfo(
-            title="Pristup nije dopusten",
-            message="Windows nije dopustio pristup datoteci ili izlaznoj mapi.",
+            title=_tr("Access was denied"),
+            message=_tr(
+                "Windows denied access to the file or output folder."
+            ),
             technical_detail=technical_detail,
-            suggestion="Zatvori program koji koristi datoteku ili odaberi drugu mapu.",
+            suggestion=_tr(
+                "Close the program using the file or choose another folder."
+            ),
         )
 
     if isinstance(error, InsufficientDiskSpaceError):
         return ErrorInfo(
-            title="Nema dovoljno prostora",
-            message="Na disku nema dovoljno slobodnog prostora za zavrsetak konverzije.",
+            title=_tr("Not enough disk space"),
+            message=_tr(
+                "The disk does not have enough free space to finish the conversion."
+            ),
             technical_detail=technical_detail,
-            suggestion="Oslobodi prostor ili odaberi drugu izlaznu mapu.",
+            suggestion=_tr("Free up space or choose another output folder."),
         )
 
-    if isinstance(error, UnsupportedFormatError) or "nije podr" in lowered:
+    if isinstance(error, UnsupportedFormatError) or "not supported" in lowered:
         return ErrorInfo(
-            title="Nepodrzani format",
-            message="Odabrani format nije podrzan.",
+            title=_tr("Unsupported format"),
+            message=_tr("The selected format is not supported."),
             technical_detail=technical_detail,
-            suggestion="Odaberi datoteku s podrzanom ekstenzijom.",
+            suggestion=_tr("Choose a file with a supported extension."),
         )
 
     if isinstance(error, FileLockedError) or _looks_locked(lowered):
         return ErrorInfo(
-            title="Datoteka je zauzeta",
-            message="Datoteku trenutacno koristi drugi program. Zatvori je i pokusaj ponovno.",
+            title=_tr("File is in use"),
+            message=_tr(
+                "The file is currently being used by another program. Close it and try again."
+            ),
             technical_detail=technical_detail,
-            suggestion="Zatvori Word, PDF reader, editor slika ili sync alat koji koristi datoteku.",
+            suggestion=_tr(
+                "Close Word, a PDF reader, an image editor, or the sync tool using the file."
+            ),
         )
 
     if isinstance(error, CorruptedFileError) or _looks_password_pdf(lowered):
         if _looks_password_pdf(lowered):
             return ErrorInfo(
-                title="PDF je zakljucan",
-                message="PDF je zakljucan lozinkom i ne moze se obraditi.",
+                title=_tr("PDF is locked"),
+                message=_tr(
+                    "The PDF is password-protected and cannot be processed."
+                ),
                 technical_detail=technical_detail,
-                suggestion="Otvori PDF, ukloni lozinku i pokusaj ponovno.",
+                suggestion=_tr(
+                    "Open the PDF, remove the password, and try again."
+                ),
             )
 
         if _looks_image_error(lowered):
             return ErrorInfo(
-                title="Slika nije valjana",
-                message="Slika je ostecena ili nije valjana slikovna datoteka.",
+                title=_tr("Image is not valid"),
+                message=_tr(
+                    "The image is corrupted or is not a valid image file."
+                ),
                 technical_detail=technical_detail,
             )
 
         return ErrorInfo(
-            title="Datoteka nije valjana",
-            message="PDF se ne moze otvoriti ili je ostecen.",
+            title=_tr("File is not valid"),
+            message=_tr("The PDF cannot be opened or is corrupted."),
             technical_detail=technical_detail,
-            suggestion="Provjeri datoteku u izvornom programu i pokusaj ponovno.",
+            suggestion=_tr(
+                "Check the file in the original program and try again."
+            ),
         )
 
     if isinstance(error, DependencyNotFoundError) or _looks_libreoffice_missing(lowered):
         return ErrorInfo(
-            title="LibreOffice nije pronaden",
-            message="LibreOffice nije pronaden. Instaliraj ga ili odaberi soffice.exe.",
+            title=_tr("LibreOffice was not found"),
+            message=_tr(
+                "LibreOffice was not found. Install it or choose soffice.exe."
+            ),
             technical_detail=technical_detail,
-            suggestion="U Postavkama odaberi ispravnu putanju do soffice.exe.",
+            suggestion=_tr(
+                "Choose the correct path to soffice.exe in Settings."
+            ),
         )
 
     if isinstance(error, OutputDirectoryError):
         return ErrorInfo(
-            title="Problem s izlaznom mapom",
-            message="Izlazna mapa nije dostupna za spremanje rezultata.",
+            title=_tr("Output folder problem"),
+            message=_tr(
+                "The output folder is not available for saving results."
+            ),
             technical_detail=technical_detail,
-            suggestion="Odaberi drugu izlaznu mapu ili provjeri dozvole.",
+            suggestion=_tr(
+                "Choose another output folder or check permissions."
+            ),
         )
 
     if isinstance(error, InputFileError):
         return ErrorInfo(
-            title="Problem s ulaznom datotekom",
+            title=_tr("Input file problem"),
             message=(
                 getattr(error, "user_message", None)
-                or "Ulazna datoteka nije dostupna za konverziju."
+                or _tr("The input file is not available for conversion.")
             ),
             technical_detail=technical_detail,
             suggestion=getattr(error, "suggestion", None),
@@ -128,7 +155,7 @@ def exception_to_error_info(error: BaseException) -> ErrorInfo:
 
     if isinstance(error, LocalFileConverterError):
         return ErrorInfo(
-            title="Konverzija nije uspjela",
+            title=_tr("Conversion failed"),
             message=(
                 getattr(error, "user_message", None)
                 or _short_user_message(message_text)
@@ -138,21 +165,27 @@ def exception_to_error_info(error: BaseException) -> ErrorInfo:
         )
 
     return ErrorInfo(
-        title="Neocekivana greska",
-        message="Konverzija nije uspjela zbog neocekivane greske. Tehnicki detalji spremljeni su u log.",
+        title=_tr("Unexpected error"),
+        message=_tr(
+            "The conversion failed because of an unexpected error. Technical details were saved to the log."
+        ),
         technical_detail=technical_detail,
     )
 
 
+def _tr(source_text: str) -> str:
+    return translate("ErrorHandler", source_text)
+
+
 def _technical_detail(error: BaseException) -> str:
     return sanitize_for_log(
-        f"{error.__class__.__name__}: {str(error) or '<bez poruke>'}"
+        f"{error.__class__.__name__}: {str(error) or '<no message>'}"
     )
 
 
 def _short_user_message(message: str) -> str:
     first_line = message.strip().splitlines()[0] if message.strip() else ""
-    return first_line or "Konverzija nije uspjela."
+    return first_line or _tr("The conversion failed.")
 
 
 def _looks_locked(text: str) -> bool:
@@ -162,8 +195,8 @@ def _looks_locked(text: str) -> bool:
             "being used",
             "permission denied",
             "access is denied",
-            "proces ne moze pristupiti",
-            "koristi drugi program",
+            "cannot access the file",
+            "used by another program",
             "winerror 32",
             "winerror 5",
         )
@@ -171,7 +204,7 @@ def _looks_locked(text: str) -> bool:
 
 
 def _looks_password_pdf(text: str) -> bool:
-    return "lozink" in text or "password" in text or "needs pass" in text
+    return "password" in text or "needs pass" in text or "encrypted" in text
 
 
 def _looks_image_error(text: str) -> bool:
@@ -179,7 +212,6 @@ def _looks_image_error(text: str) -> bool:
         fragment in text
         for fragment in (
             "image",
-            "slika",
             "cannot identify image",
             "truncated",
         )
@@ -188,5 +220,5 @@ def _looks_image_error(text: str) -> bool:
 
 def _looks_libreoffice_missing(text: str) -> bool:
     return "libreoffice" in text and (
-        "nije prona" in text or "not found" in text
+        "not found" in text or "missing" in text
     )

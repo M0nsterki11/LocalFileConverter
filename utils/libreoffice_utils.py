@@ -13,7 +13,7 @@ VALID_LIBREOFFICE_EXECUTABLE_NAMES = {
 def is_valid_libreoffice_executable(
     executable_path: str | Path | None,
 ) -> bool:
-    """Provjerava postoji li valjana LibreOffice izvršna datoteka."""
+    """Return whether the path points to a valid LibreOffice executable."""
     if executable_path is None:
         return False
 
@@ -31,12 +31,12 @@ def find_libreoffice(
     saved_path: str | Path | None = None,
 ) -> Path | None:
     """
-    Pokušava automatski pronaći LibreOffice.
+    Try to find LibreOffice automatically.
 
-    Redoslijed:
-    1. prethodno spremljena putanja
+    Search order:
+    1. previously saved path
     2. Windows PATH
-    3. uobičajene instalacijske mape
+    3. common installation folders
     """
     candidates: list[Path] = []
 
@@ -98,7 +98,7 @@ def find_libreoffice(
 
 
 def get_default_libreoffice_browse_directory() -> Path:
-    """Vraća razumnu početnu mapu za ručni odabir LibreOfficea."""
+    """Return a reasonable start folder for manual LibreOffice selection."""
     program_files = os.environ.get("ProgramFiles")
 
     if program_files:

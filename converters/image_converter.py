@@ -7,6 +7,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.constants import IMAGE_EXTENSIONS
 from app.exceptions import ConversionError, UnsupportedFormatError
+from app.i18n import translate
 from utils.file_utils import generate_unique_output_path
 from utils.input_validation import validate_image_file
 from utils.output_safety import (
@@ -48,12 +49,16 @@ def convert_image(
 
     if input_path.suffix.lower() not in IMAGE_EXTENSIONS:
         raise UnsupportedFormatError(
-            f"Format {input_path.suffix} nije podrzana slika."
+            _tr("Format {format_name} is not a supported image.").format(
+                format_name=input_path.suffix,
+            )
         )
 
     if normalized_format not in OUTPUT_EXTENSIONS:
         raise UnsupportedFormatError(
-            f"Izlazni format {normalized_format} nije podrzan."
+            _tr("Output format {format_name} is not supported.").format(
+                format_name=normalized_format,
+            )
         )
 
     quality = max(1, min(100, int(quality)))
@@ -76,7 +81,9 @@ def convert_image(
     try:
         _emit_status(
             status_callback,
-            f"Otvaranje datoteke {input_path.name}...",
+            _tr("Opening file {file_name}...").format(
+                file_name=input_path.name,
+            ),
         )
         _emit_progress(progress_callback, 10)
 
@@ -86,7 +93,9 @@ def convert_image(
 
             _emit_status(
                 status_callback,
-                f"Priprema slike za {normalized_format} format...",
+                _tr("Preparing image for {format_name} format...").format(
+                    format_name=normalized_format,
+                ),
             )
             _emit_progress(progress_callback, 35)
 
@@ -97,7 +106,9 @@ def convert_image(
 
             _emit_status(
                 status_callback,
-                f"Spremanje datoteke {requested_result_path.name}...",
+                _tr("Saving file {file_name}...").format(
+                    file_name=requested_result_path.name,
+                ),
             )
             _emit_progress(progress_callback, 70)
 
@@ -117,19 +128,19 @@ def convert_image(
         )
 
         _emit_progress(progress_callback, 100)
-        _emit_status(status_callback, "Konverzija je zavrsena.")
+        _emit_status(status_callback, _tr("Conversion is finished."))
         return result_path
 
     except UnidentifiedImageError as error:
         cleanup_temporary_path(temporary_path)
         raise ImageConversionError(
-            "Datoteka nije valjana slika ili je ostecena."
+            _tr("The file is not a valid image or is corrupted.")
         ) from error
 
     except PermissionError as error:
         cleanup_temporary_path(temporary_path)
         raise ImageConversionError(
-            "Nema dozvole za citanje ili spremanje datoteke."
+            _tr("Permission is missing for reading or saving the file.")
         ) from error
 
     except ImageConversionError:
@@ -139,7 +150,9 @@ def convert_image(
     except OSError as error:
         cleanup_temporary_path(temporary_path)
         raise ImageConversionError(
-            f"Slika se nije mogla konvertirati: {error}"
+            _tr("The image could not be converted: {error}").format(
+                error=error,
+            )
         ) from error
 
     except Exception:
@@ -167,7 +180,9 @@ def _prepare_image(
         return image.convert("RGB")
 
     raise ImageConversionError(
-        f"Nepoznat izlazni format: {output_format}"
+        _tr("Unknown output format: {format_name}").format(
+            format_name=output_format,
+        )
     )
 
 
@@ -232,7 +247,9 @@ def _save_image(
         return
 
     raise UnsupportedFormatError(
-        f"Spremanje formata {output_format} nije podrzano."
+        _tr("Saving format {format_name} is not supported.").format(
+            format_name=output_format,
+        )
     )
 
 
@@ -250,3 +267,7 @@ def _emit_status(
 ) -> None:
     if callback is not None:
         callback(message)
+
+
+def _tr(source_text: str) -> str:
+    return translate("ImageConverter", source_text)

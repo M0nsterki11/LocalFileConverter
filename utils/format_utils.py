@@ -8,12 +8,12 @@ from app.constants import (
 
 
 def get_file_extension(file_path: str | Path) -> str:
-    """Vraća ekstenziju datoteke malim slovima, uključujući točku."""
+    """Return the lowercase file extension, including the dot."""
     return Path(file_path).suffix.lower()
 
 
 def is_supported_file(file_path: str | Path) -> bool:
-    """Provjerava postoji li datoteka i podržava li aplikacija njezin format."""
+    """Return whether the path exists and has a supported format."""
     path = Path(file_path)
 
     return (
@@ -24,12 +24,12 @@ def is_supported_file(file_path: str | Path) -> bool:
 
 
 def get_display_format(file_path: str | Path) -> str:
-    """Vraća naziv formata prikladan za prikaz u sučelju."""
+    """Return a display-friendly format name."""
     extension = get_file_extension(file_path)
-    return DISPLAY_FORMAT_NAMES.get(extension, "Nepoznat format")
+    return DISPLAY_FORMAT_NAMES.get(extension, "Unknown format")
 
 
 def get_available_output_formats(file_path: str | Path) -> list[str]:
-    """Vraća podržane izlazne formate za odabranu datoteku."""
+    """Return supported output formats for the selected file."""
     extension = get_file_extension(file_path)
     return OUTPUT_FORMATS_BY_EXTENSION.get(extension, [])

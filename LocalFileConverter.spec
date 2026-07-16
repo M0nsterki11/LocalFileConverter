@@ -20,6 +20,7 @@ app_name = (
 )
 
 resources_path = project_root / "resources"
+translations_path = project_root / "translations"
 icon_path = project_root / "resources" / "app_icon.ico"
 version_path = project_root / "packaging" / "windows_version_info.txt"
 
@@ -27,6 +28,9 @@ datas = []
 
 if resources_path.exists():
     datas.append((str(resources_path), "resources"))
+
+if translations_path.exists():
+    datas.append((str(translations_path), "translations"))
 
 if not icon_path.exists():
     raise FileNotFoundError(f"Application icon is required: {icon_path}")

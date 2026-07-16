@@ -32,7 +32,7 @@ SetupIconFile=..\resources\app_icon.ico
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Napravi precac na radnoj povrsini"; GroupDescription: "Precaci:"; Flags: checkedonce
+Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: checkedonce
 
 [InstallDelete]
 Type: filesandordirs; Name: "{app}\_internal"
@@ -47,7 +47,7 @@ Name: "{group}\Uninstall Local File Converter"; Filename: "{uninstallexe}"; Icon
 Name: "{autodesktop}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "Pokreni Local File Converter"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "Launch Local File Converter"; Flags: nowait postinstall skipifsilent
 
 [Code]
 const

@@ -9,6 +9,7 @@ $PythonExe = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
 $SpecFile = Join-Path $ProjectRoot "LocalFileConverter.spec"
 $MainFile = Join-Path $ProjectRoot "main.py"
 $VersionScript = Join-Path $ProjectRoot "scripts\generate_windows_version_info.py"
+$TranslationsScript = Join-Path $ProjectRoot "scripts\build_translations.ps1"
 $VerifyScript = Join-Path $ProjectRoot "scripts\verify_build.py"
 $IconFile = Join-Path $ProjectRoot "resources\app_icon.ico"
 $OutputExe = Join-Path $ProjectRoot "dist\LocalFileConverter\LocalFileConverter.exe"
@@ -18,27 +19,31 @@ function Stop-Build($Message) {
     exit 1
 }
 
-if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "Nedostaje .venv mapa." }
-if (-not (Test-Path $PythonExe)) { Stop-Build "Nedostaje .venv\Scripts\python.exe." }
-if (-not (Test-Path $MainFile)) { Stop-Build "Nedostaje main.py." }
-if (-not (Test-Path $SpecFile)) { Stop-Build "Nedostaje LocalFileConverter.spec." }
-if (-not (Test-Path $VersionScript)) { Stop-Build "Nedostaje generator version info datoteke." }
+if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "The .venv folder is missing." }
+if (-not (Test-Path $PythonExe)) { Stop-Build ".venv\Scripts\python.exe is missing." }
+if (-not (Test-Path $MainFile)) { Stop-Build "main.py is missing." }
+if (-not (Test-Path $SpecFile)) { Stop-Build "LocalFileConverter.spec is missing." }
+if (-not (Test-Path $VersionScript)) { Stop-Build "The Windows version info generator is missing." }
+if (-not (Test-Path $TranslationsScript)) { Stop-Build "The translation build script is missing." }
 
 & $PythonExe -c "import PyInstaller" 2>$null
 if ($LASTEXITCODE -ne 0) {
-    Stop-Build "PyInstaller nije instaliran. Pokreni: .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt"
+    Stop-Build "PyInstaller is not installed. Run: .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt"
 }
 
-if (-not (Test-Path $IconFile)) { Stop-Build "Nedostaje resources\app_icon.ico; ikona je obavezna za release build." }
-if ((Get-Item $IconFile).Length -le 0) { Stop-Build "resources\app_icon.ico je prazan." }
+if (-not (Test-Path $IconFile)) { Stop-Build "resources\app_icon.ico is missing; the icon is required for release builds." }
+if ((Get-Item $IconFile).Length -le 0) { Stop-Build "resources\app_icon.ico is empty." }
 
 if (-not $SkipTests) {
     & $PythonExe -m pytest -q
-    if ($LASTEXITCODE -ne 0) { Stop-Build "Testovi ne prolaze; release build je zaustavljen." }
+    if ($LASTEXITCODE -ne 0) { Stop-Build "Tests failed; the release build was stopped." }
 }
 
+& powershell -NoProfile -ExecutionPolicy Bypass -File $TranslationsScript
+if ($LASTEXITCODE -ne 0) { Stop-Build "Translation compilation failed." }
+
 & $PythonExe $VersionScript
-if ($LASTEXITCODE -ne 0) { Stop-Build "Generiranje Windows version info datoteke nije uspjelo." }
+if ($LASTEXITCODE -ne 0) { Stop-Build "Generating Windows version info failed." }
 
 $env:LFC_BUILD_MODE = "release"
 $env:LFC_BUILD_TARGET = "onedir"
@@ -47,10 +52,10 @@ $buildExitCode = $LASTEXITCODE
 Remove-Item Env:\LFC_BUILD_MODE -ErrorAction SilentlyContinue
 Remove-Item Env:\LFC_BUILD_TARGET -ErrorAction SilentlyContinue
 
-if ($buildExitCode -ne 0) { Stop-Build "PyInstaller release build nije uspio." }
-if (-not (Test-Path $OutputExe)) { Stop-Build "Ocekivani EXE nije pronaden: $OutputExe" }
+if ($buildExitCode -ne 0) { Stop-Build "The PyInstaller release build failed." }
+if (-not (Test-Path $OutputExe)) { Stop-Build "The expected EXE was not found: $OutputExe" }
 
 & $PythonExe $VerifyScript --bundle (Join-Path $ProjectRoot "dist\LocalFileConverter") --name "LocalFileConverter"
-if ($LASTEXITCODE -ne 0) { Stop-Build "Build verification nije prosao." }
+if ($LASTEXITCODE -ne 0) { Stop-Build "Build verification failed." }
 
-Write-Host "Release build je spreman: $OutputExe"
+Write-Host "Release build is ready: $OutputExe"

@@ -14,6 +14,7 @@ from app.constants import (
     APP_VERSION,
     GITHUB_REPOSITORY_URL,
 )
+from app.i18n import get_translation_manager
 from app.icon_provider import get_app_icon
 from utils.logging_utils import open_log_directory
 
@@ -21,7 +22,6 @@ from utils.logging_utils import open_log_directory
 class AboutDialog(QDialog):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle(f"O aplikaciji {APP_NAME}")
         self.setMinimumWidth(460)
 
         app_icon = get_app_icon()
@@ -30,48 +30,68 @@ class AboutDialog(QDialog):
             self.setWindowIcon(app_icon)
 
         self._build_ui()
+        self.retranslate_ui()
+        get_translation_manager().language_changed.connect(
+            self.retranslate_ui
+        )
 
     def _build_ui(self) -> None:
         root_layout = QVBoxLayout(self)
         root_layout.setSpacing(12)
 
-        title_label = QLabel(APP_NAME)
-        title_label.setObjectName("mainTitle")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label = QLabel(APP_NAME)
+        self.title_label.setObjectName("mainTitle")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        version_label = QLabel(f"Verzija {APP_VERSION}")
-        version_label.setObjectName("subtitle")
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.version_label = QLabel()
+        self.version_label.setObjectName("subtitle")
+        self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        body_label = QLabel(
-            "Local File Converter obradu datoteka izvodi lokalno. "
-            "Podaci se ne šalju na internet.\n\n"
-            "Podržane su konverzije slika, PDF-a, Office dokumenata "
-            "u PDF te spajanje više slika u jedan PDF.\n\n"
-            "Aplikacija je napravljena u Pythonu i PySide6. "
-            "LibreOffice se koristi kao vanjski alat kada je odabran "
-            "ili potreban za Office konverziju.\n\n"
-            "Aplikacija sprema lokalni tehnicki log za greske. "
-            "Log ne sadrzi sadrzaj dokumenata i mozes ga otvoriti "
-            "ili obrisati iz svoje korisnicke mape.\n\n"
-            f"GitHub: {GITHUB_REPOSITORY_URL}\n"
-            f"Copyright {date.today().year}"
-        )
-        body_label.setWordWrap(True)
-        body_label.setTextInteractionFlags(
+        self.body_label = QLabel()
+        self.body_label.setWordWrap(True)
+        self.body_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
 
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        logs_button = QPushButton("Otvori mapu s logovima")
-        logs_button.clicked.connect(open_log_directory)
-        close_button = QPushButton("Zatvori")
-        close_button.clicked.connect(self.accept)
-        button_layout.addWidget(logs_button)
-        button_layout.addWidget(close_button)
+        self.logs_button = QPushButton()
+        self.logs_button.clicked.connect(open_log_directory)
+        self.close_button = QPushButton()
+        self.close_button.clicked.connect(self.accept)
+        button_layout.addWidget(self.logs_button)
+        button_layout.addWidget(self.close_button)
 
-        root_layout.addWidget(title_label)
-        root_layout.addWidget(version_label)
-        root_layout.addWidget(body_label)
+        root_layout.addWidget(self.title_label)
+        root_layout.addWidget(self.version_label)
+        root_layout.addWidget(self.body_label)
         root_layout.addLayout(button_layout)
+
+    def retranslate_ui(self, *_args) -> None:
+        self.setWindowTitle(self.tr("About {app_name}").format(
+            app_name=APP_NAME,
+        ))
+        self.version_label.setText(self.tr("Version {version}").format(
+            version=APP_VERSION,
+        ))
+        self.body_label.setText(
+            self.tr(
+                "Local File Converter processes files locally. "
+                "Data is not sent to the internet.\n\n"
+                "It supports image conversions, PDF conversions, Office "
+                "documents to PDF, and merging multiple images into one PDF.\n\n"
+                "The application is built with Python and PySide6. "
+                "LibreOffice is used as an external tool when selected or "
+                "required for Office conversion.\n\n"
+                "The application stores a local technical log for errors. "
+                "The log does not contain document contents, and you can open "
+                "or delete it from your user folder.\n\n"
+                "GitHub: {github_url}\n"
+                "Copyright {year}"
+            ).format(
+                github_url=GITHUB_REPOSITORY_URL,
+                year=date.today().year,
+            )
+        )
+        self.logs_button.setText(self.tr("Open log folder"))
+        self.close_button.setText(self.tr("Close"))

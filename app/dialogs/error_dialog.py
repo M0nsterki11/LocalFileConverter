@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from app.i18n import get_translation_manager
 from app.icon_provider import get_app_icon
 from utils.error_handler import ErrorInfo
 from utils.logging_utils import open_log_directory
@@ -19,7 +20,7 @@ class ErrorDetailsDialog(QDialog):
     def __init__(
         self,
         error_info: ErrorInfo,
-        close_button_text: str = "U redu",
+        close_button_text: str | None = None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -34,6 +35,10 @@ class ErrorDetailsDialog(QDialog):
             self.setWindowIcon(app_icon)
 
         self._build_ui()
+        self.retranslate_ui()
+        get_translation_manager().language_changed.connect(
+            self.retranslate_ui
+        )
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -56,10 +61,10 @@ class ErrorDetailsDialog(QDialog):
         layout.addWidget(self.details_edit)
 
         button_layout = QHBoxLayout()
-        self.details_button = QPushButton("Tehnicki detalji")
-        self.copy_button = QPushButton("Kopiraj detalje")
-        self.open_logs_button = QPushButton("Otvori mapu s logovima")
-        self.ok_button = QPushButton(self.close_button_text)
+        self.details_button = QPushButton()
+        self.copy_button = QPushButton()
+        self.open_logs_button = QPushButton()
+        self.ok_button = QPushButton()
 
         self.details_button.clicked.connect(self._toggle_details)
         self.copy_button.clicked.connect(self._copy_details)
@@ -72,6 +77,12 @@ class ErrorDetailsDialog(QDialog):
         button_layout.addStretch()
         button_layout.addWidget(self.ok_button)
         layout.addLayout(button_layout)
+
+    def retranslate_ui(self, *_args) -> None:
+        self.details_button.setText(self.tr("Technical details"))
+        self.copy_button.setText(self.tr("Copy details"))
+        self.open_logs_button.setText(self.tr("Open log folder"))
+        self.ok_button.setText(self.close_button_text or self.tr("OK"))
 
     def _toggle_details(self) -> None:
         self.details_edit.setVisible(not self.details_edit.isVisible())

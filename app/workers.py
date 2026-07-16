@@ -25,7 +25,7 @@ from utils.logging_utils import (
 
 
 class ConversionWorker(QObject):
-    """Izvodi konverziju izvan glavnog UI threada."""
+    """Run a conversion outside the main UI thread."""
 
     progress_changed = Signal(int)
     status_changed = Signal(str)

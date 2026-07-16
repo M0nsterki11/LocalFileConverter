@@ -150,7 +150,7 @@ def cleanup_old_lfc_temp_files(
     except OSError as error:
         _warning_safely(
             target_logger,
-            "Ne mogu pregledati privremenu mapu %s: %s",
+            "Cannot inspect temporary directory %s: %s",
             sanitize_path(root),
             error,
         )
@@ -174,7 +174,7 @@ def cleanup_old_lfc_temp_files(
         except OSError as error:
             _warning_safely(
                 target_logger,
-                "Ne mogu obrisati stari temp zapis %s: %s",
+                "Cannot remove old temporary entry %s: %s",
                 sanitize_path(candidate),
                 error,
             )

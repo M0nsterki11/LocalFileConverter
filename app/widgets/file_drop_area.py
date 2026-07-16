@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 
 class FileDropArea(QFrame):
-    """Podrucje u koje korisnik moze povuci vise datoteka."""
+    """Area where the user can drop multiple files."""
 
     files_dropped = Signal(list)
 
@@ -16,15 +16,13 @@ class FileDropArea(QFrame):
         self.setAcceptDrops(True)
         self.setMinimumHeight(150)
 
-        self.title_label = QLabel("Povuci datoteke ovdje")
+        self.title_label = QLabel()
         self.title_label.setObjectName("dropTitle")
         self.title_label.setAlignment(
             Qt.AlignmentFlag.AlignCenter
         )
 
-        self.description_label = QLabel(
-            "Podrzani formati: JPG, PNG, WEBP, PDF, DOCX, PPTX i XLSX"
-        )
+        self.description_label = QLabel()
         self.description_label.setObjectName(
             "dropDescription"
         )
@@ -38,6 +36,13 @@ class FileDropArea(QFrame):
         layout.addWidget(self.title_label)
         layout.addWidget(self.description_label)
         layout.addStretch()
+        self.retranslate_ui()
+
+    def retranslate_ui(self) -> None:
+        self.title_label.setText(self.tr("Drop files here"))
+        self.description_label.setText(
+            self.tr("Supported formats: JPG, PNG, WEBP, PDF, DOCX, PPTX and XLSX")
+        )
 
     def dragEnterEvent(self, event) -> None:
         if event.mimeData().hasUrls():

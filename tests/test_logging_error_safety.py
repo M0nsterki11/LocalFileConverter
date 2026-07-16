@@ -108,16 +108,16 @@ def test_sanitize_home_path() -> None:
 @pytest.mark.parametrize(
     ("error", "expected"),
     [
-        (FileNotFoundError("missing"), "vise ne postoji"),
-        (PermissionError("denied"), "Windows nije dopustio"),
-        (UnsupportedFormatError("bad"), "format nije podrzan"),
-        (CorruptedFileError("Slika je ostecena"), "Slika je ostecena"),
-        (CorruptedFileError("PDF je zakljucan lozinkom"), "lozinkom"),
+        (FileNotFoundError("missing"), "no longer exists"),
+        (PermissionError("denied"), "Windows denied access"),
+        (UnsupportedFormatError("bad"), "format is not supported"),
+        (CorruptedFileError("Image is corrupted"), "image is corrupted"),
+        (CorruptedFileError("PDF is password-protected"), "password"),
         (
             InsufficientDiskSpaceError("disk"),
-            "nema dovoljno slobodnog prostora",
+            "not have enough free space",
         ),
-        (RuntimeError("boom"), "neocekivane greske"),
+        (RuntimeError("boom"), "unexpected error"),
     ],
 )
 def test_error_mapping(error: Exception, expected: str) -> None:

@@ -39,6 +39,7 @@ from app.dialogs.error_dialog import ErrorDetailsDialog
 from app.dialogs.merge_images_dialog import MergeImagesDialog
 from app.dialogs.settings_dialog import SettingsDialog
 from app.icon_provider import get_app_icon, get_icon
+from app.i18n import get_translation_manager
 from app.settings import (
     AppSettings,
     get_window_geometry,
@@ -116,6 +117,10 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._build_menu()
         self._connect_signals()
+        self.retranslate_ui()
+        get_translation_manager().language_changed.connect(
+            self.retranslate_ui
+        )
         self._update_output_directory_label()
         self._refresh_libreoffice_ui()
         self._load_active_item(None)
@@ -141,23 +146,20 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(32, 24, 32, 24)
         main_layout.setSpacing(18)
 
-        title_label = QLabel("LOCAL FILE CONVERTER")
-        title_label.setObjectName("mainTitle")
-        title_label.setAlignment(
+        self.title_label = QLabel()
+        self.title_label.setObjectName("mainTitle")
+        self.title_label.setAlignment(
             Qt.AlignmentFlag.AlignCenter
         )
 
-        subtitle_label = QLabel(
-            "Pretvaranje datoteka lokalno, "
-            "bez slanja podataka na internet"
-        )
-        subtitle_label.setObjectName("subtitle")
-        subtitle_label.setAlignment(
+        self.subtitle_label = QLabel()
+        self.subtitle_label.setObjectName("subtitle")
+        self.subtitle_label.setAlignment(
             Qt.AlignmentFlag.AlignCenter
         )
 
-        main_layout.addWidget(title_label)
-        main_layout.addWidget(subtitle_label)
+        main_layout.addWidget(self.title_label)
+        main_layout.addWidget(self.subtitle_label)
 
         self.drop_area = FileDropArea()
         main_layout.addWidget(self.drop_area)
@@ -165,23 +167,17 @@ class MainWindow(QMainWindow):
         list_button_layout = QHBoxLayout()
         list_button_layout.setSpacing(10)
 
-        self.add_files_button = QPushButton("Dodaj datoteke")
+        self.add_files_button = QPushButton()
         self.add_files_button.setMinimumHeight(40)
-        self.remove_selected_button = QPushButton(
-            "Ukloni oznacene"
-        )
+        self.remove_selected_button = QPushButton()
         self.remove_selected_button.setMinimumHeight(40)
-        self.clear_list_button = QPushButton("Ocisti listu")
+        self.clear_list_button = QPushButton()
         self.clear_list_button.setMinimumHeight(40)
-        self.retry_failed_button = QPushButton(
-            "Ponovi neuspjele"
-        )
+        self.retry_failed_button = QPushButton()
         self.retry_failed_button.setMinimumHeight(40)
-        self.merge_images_button = QPushButton(
-            "Spoji slike u jedan PDF"
-        )
+        self.merge_images_button = QPushButton()
         self.merge_images_button.setMinimumHeight(40)
-        self.settings_button = QPushButton("Postavke")
+        self.settings_button = QPushButton()
         self.settings_button.setMinimumHeight(40)
 
         for button in (
@@ -196,24 +192,22 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(list_button_layout)
 
-        queue_group = QGroupBox("Datoteke")
-        queue_layout = QVBoxLayout(queue_group)
-        self.empty_queue_label = QLabel(
-            "Lista je prazna. Dodaj datoteke ili ih povuci u aplikaciju."
-        )
+        self.queue_group = QGroupBox()
+        queue_layout = QVBoxLayout(self.queue_group)
+        self.empty_queue_label = QLabel()
         self.empty_queue_label.setObjectName("emptyStateLabel")
         self.empty_queue_label.setWordWrap(True)
         self.queue_widget = ConversionQueueWidget()
         queue_layout.addWidget(self.empty_queue_label)
         queue_layout.addWidget(self.queue_widget)
-        main_layout.addWidget(queue_group)
+        main_layout.addWidget(self.queue_group)
 
-        file_group = QGroupBox("Oznacena stavka")
-        file_layout = QGridLayout(file_group)
+        self.file_group = QGroupBox()
+        file_layout = QGridLayout(self.file_group)
         file_layout.setHorizontalSpacing(16)
         file_layout.setVerticalSpacing(10)
 
-        self.file_name_label = QLabel("Nije odabrana")
+        self.file_name_label = QLabel()
         self.file_name_label.setObjectName("valueLabel")
         self.file_name_label.setWordWrap(True)
 
@@ -227,29 +221,29 @@ class MainWindow(QMainWindow):
         self.input_format_label = QLabel("-")
         self.input_format_label.setObjectName("valueLabel")
 
-        file_layout.addWidget(QLabel("Naziv:"), 0, 0)
+        self.file_name_title_label = QLabel()
+        self.file_path_title_label = QLabel()
+        self.input_format_title_label = QLabel()
+
+        file_layout.addWidget(self.file_name_title_label, 0, 0)
         file_layout.addWidget(self.file_name_label, 0, 1)
-        file_layout.addWidget(QLabel("Putanja:"), 1, 0)
+        file_layout.addWidget(self.file_path_title_label, 1, 0)
         file_layout.addWidget(self.file_path_label, 1, 1)
-        file_layout.addWidget(QLabel("Ulazni format:"), 2, 0)
+        file_layout.addWidget(self.input_format_title_label, 2, 0)
         file_layout.addWidget(self.input_format_label, 2, 1)
         file_layout.setColumnStretch(1, 1)
-        main_layout.addWidget(file_group)
+        main_layout.addWidget(self.file_group)
 
-        conversion_group = QGroupBox(
-            "Postavke oznacene stavke"
-        )
-        conversion_layout = QGridLayout(conversion_group)
+        self.conversion_group = QGroupBox()
+        conversion_layout = QGridLayout(self.conversion_group)
         conversion_layout.setHorizontalSpacing(16)
         conversion_layout.setVerticalSpacing(12)
 
-        self.output_format_label = QLabel(
-            "Izlazni format:"
-        )
+        self.output_format_label = QLabel()
         self.output_format_combo = QComboBox()
         self.output_format_combo.setMinimumHeight(38)
 
-        self.quality_label = QLabel("Kvaliteta:")
+        self.quality_label = QLabel()
         self.quality_slider = QSlider(
             Qt.Orientation.Horizontal
         )
@@ -269,34 +263,29 @@ class MainWindow(QMainWindow):
             | Qt.AlignmentFlag.AlignVCenter
         )
 
-        self.page_mode_label = QLabel("PDF stranice:")
+        self.page_mode_label = QLabel()
         self.page_mode_combo = QComboBox()
         self.page_mode_combo.addItem(
-            "Sve stranice",
+            "",
             userData="all",
         )
         self.page_mode_combo.addItem(
-            "Odabrane stranice",
+            "",
             userData="selected",
         )
         self.page_mode_combo.setMinimumHeight(38)
 
         self.page_range_input = QLineEdit()
-        self.page_range_input.setPlaceholderText(
-            "Primjer: 1,3-5,8"
-        )
         self.page_range_input.setMinimumHeight(38)
 
-        self.multi_page_output_label = QLabel(
-            "Vise PDF stranica:"
-        )
+        self.multi_page_output_label = QLabel()
         self.multi_page_output_combo = QComboBox()
         self.multi_page_output_combo.addItem(
-            "Obicna mapa (zadano)",
+            "",
             userData="folder",
         )
         self.multi_page_output_combo.addItem(
-            "ZIP arhiva",
+            "",
             userData="zip",
         )
         self._set_combo_to_user_data(
@@ -304,13 +293,8 @@ class MainWindow(QMainWindow):
             self.app_settings.default_multi_page_output_mode,
         )
         self.multi_page_output_combo.setMinimumHeight(38)
-        self.multi_page_output_combo.setToolTip(
-            "Primjenjuje se kada PDF daje vise slika. "
-            "Ako obicna mapa prijede 100 MB, rezultat ce "
-            "se automatski spremiti kao ZIP."
-        )
 
-        self.dpi_label = QLabel("PDF DPI:")
+        self.dpi_label = QLabel()
         self.dpi_combo = QComboBox()
         self.dpi_combo.addItem("96 DPI", userData=96)
         self.dpi_combo.addItem("150 DPI", userData=150)
@@ -322,9 +306,7 @@ class MainWindow(QMainWindow):
         )
         self.dpi_combo.setMinimumHeight(38)
 
-        self.output_directory_title_label = QLabel(
-            "Izlazna mapa:"
-        )
+        self.output_directory_title_label = QLabel()
         self.output_directory_label = QLabel()
         self.output_directory_label.setObjectName(
             "pathLabel"
@@ -334,9 +316,7 @@ class MainWindow(QMainWindow):
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
 
-        self.select_output_button = QPushButton(
-            "Promijeni mapu"
-        )
+        self.select_output_button = QPushButton()
         self.select_output_button.setMinimumHeight(38)
 
         conversion_layout.addWidget(
@@ -406,10 +386,10 @@ class MainWindow(QMainWindow):
             2,
         )
         conversion_layout.setColumnStretch(1, 1)
-        main_layout.addWidget(conversion_group)
+        main_layout.addWidget(self.conversion_group)
 
-        output_group = QGroupBox("Izlaz")
-        output_layout = QGridLayout(output_group)
+        self.output_group = QGroupBox()
+        output_layout = QGridLayout(self.output_group)
         output_layout.setHorizontalSpacing(16)
         output_layout.setVerticalSpacing(10)
         output_layout.addWidget(
@@ -428,11 +408,9 @@ class MainWindow(QMainWindow):
             2,
         )
         output_layout.setColumnStretch(1, 1)
-        main_layout.addWidget(output_group)
+        main_layout.addWidget(self.output_group)
 
-        self.libreoffice_group = QGroupBox(
-            "LibreOffice za Office -> PDF"
-        )
+        self.libreoffice_group = QGroupBox()
         libreoffice_layout = QGridLayout(
             self.libreoffice_group
         )
@@ -442,31 +420,22 @@ class MainWindow(QMainWindow):
         self.libreoffice_path_input = QLineEdit()
         self.libreoffice_path_input.setReadOnly(True)
         self.libreoffice_path_input.setMinimumHeight(38)
-        self.libreoffice_path_input.setPlaceholderText(
-            "LibreOffice nije pronaden"
-        )
 
-        self.detect_libreoffice_button = QPushButton(
-            "Pronadi automatski"
-        )
+        self.detect_libreoffice_button = QPushButton()
         self.detect_libreoffice_button.setMinimumHeight(38)
 
-        self.select_libreoffice_button = QPushButton(
-            "Odaberi soffice.exe"
-        )
+        self.select_libreoffice_button = QPushButton()
         self.select_libreoffice_button.setMinimumHeight(38)
 
-        libreoffice_description = QLabel(
-            "LibreOffice je potreban za DOCX, PPTX i XLSX "
-            "konverzije. Putanja se sprema za sljedece pokretanje."
-        )
-        libreoffice_description.setObjectName(
+        self.libreoffice_description = QLabel()
+        self.libreoffice_description.setObjectName(
             "dropDescription"
         )
-        libreoffice_description.setWordWrap(True)
+        self.libreoffice_description.setWordWrap(True)
 
+        self.libreoffice_program_label = QLabel()
         libreoffice_layout.addWidget(
-            QLabel("Program:"),
+            self.libreoffice_program_label,
             0,
             0,
         )
@@ -488,7 +457,7 @@ class MainWindow(QMainWindow):
             2,
         )
         libreoffice_layout.addWidget(
-            libreoffice_description,
+            self.libreoffice_description,
             2,
             0,
             1,
@@ -499,11 +468,11 @@ class MainWindow(QMainWindow):
 
         action_button_layout = QHBoxLayout()
         action_button_layout.setSpacing(12)
-        self.convert_button = QPushButton("PRETVORI SVE")
+        self.convert_button = QPushButton()
         self.convert_button.setObjectName("convertButton")
         self.convert_button.setMinimumHeight(50)
 
-        self.cancel_button = QPushButton("PREKINI")
+        self.cancel_button = QPushButton()
         self.cancel_button.setObjectName("cancelButton")
         self.cancel_button.setMinimumHeight(50)
         self.cancel_button.setEnabled(False)
@@ -518,26 +487,22 @@ class MainWindow(QMainWindow):
         )
         main_layout.addLayout(action_button_layout)
 
-        progress_group = QGroupBox("Napredak i status")
-        progress_layout = QVBoxLayout(progress_group)
+        self.progress_group = QGroupBox()
+        progress_layout = QVBoxLayout(self.progress_group)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
 
-        self.status_label = QLabel(
-            "Status: Dodaj datoteke za pocetak."
-        )
+        self.status_label = QLabel()
         self.status_label.setObjectName("statusLabel")
         self.status_label.setWordWrap(True)
 
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.status_label)
-        main_layout.addWidget(progress_group)
+        main_layout.addWidget(self.progress_group)
 
-        self.open_output_button = QPushButton(
-            "Otvori izlaznu mapu"
-        )
+        self.open_output_button = QPushButton()
         self.open_output_button.setMinimumHeight(40)
 
         open_folder_layout = QHBoxLayout()
@@ -553,13 +518,13 @@ class MainWindow(QMainWindow):
     def _build_menu(self) -> None:
         menu_bar = self.menuBar()
 
-        file_menu = menu_bar.addMenu("Datoteka")
-        tools_menu = menu_bar.addMenu("Alati")
-        help_menu = menu_bar.addMenu("Pomoc")
+        self.file_menu = menu_bar.addMenu("")
+        self.tools_menu = menu_bar.addMenu("")
+        self.help_menu = menu_bar.addMenu("")
 
         self.add_files_action = QAction(
             get_icon(self, "add"),
-            "Dodaj datoteke",
+            "",
             self,
         )
         self.add_files_action.setShortcut(QKeySequence("Ctrl+O"))
@@ -567,7 +532,7 @@ class MainWindow(QMainWindow):
 
         self.change_output_action = QAction(
             get_icon(self, "folder"),
-            "Promijeni izlaznu mapu",
+            "",
             self,
         )
         self.change_output_action.triggered.connect(
@@ -576,7 +541,7 @@ class MainWindow(QMainWindow):
 
         self.exit_action = QAction(
             get_icon(self, "exit"),
-            "Izlaz",
+            "",
             self,
         )
         self.exit_action.setShortcut(QKeySequence("Ctrl+Q"))
@@ -584,7 +549,7 @@ class MainWindow(QMainWindow):
 
         self.merge_images_action = QAction(
             get_icon(self, "merge"),
-            "Spoji slike u jedan PDF",
+            "",
             self,
         )
         self.merge_images_action.triggered.connect(
@@ -593,7 +558,7 @@ class MainWindow(QMainWindow):
 
         self.settings_action = QAction(
             get_icon(self, "settings"),
-            "Postavke",
+            "",
             self,
         )
         self.settings_action.setShortcut(QKeySequence("Ctrl+,"))
@@ -603,21 +568,21 @@ class MainWindow(QMainWindow):
 
         self.about_action = QAction(
             get_icon(self, "about"),
-            "O aplikaciji",
+            "",
             self,
         )
         self.about_action.setShortcut(QKeySequence("F1"))
         self.about_action.triggered.connect(self._open_about_dialog)
 
-        file_menu.addAction(self.add_files_action)
-        file_menu.addAction(self.change_output_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.exit_action)
+        self.file_menu.addAction(self.add_files_action)
+        self.file_menu.addAction(self.change_output_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.exit_action)
 
-        tools_menu.addAction(self.merge_images_action)
-        tools_menu.addAction(self.settings_action)
+        self.tools_menu.addAction(self.merge_images_action)
+        self.tools_menu.addAction(self.settings_action)
 
-        help_menu.addAction(self.about_action)
+        self.help_menu.addAction(self.about_action)
 
     def _apply_icons_and_tooltips(self) -> None:
         self.add_files_button.setIcon(get_icon(self, "add"))
@@ -631,31 +596,114 @@ class MainWindow(QMainWindow):
         self.open_output_button.setIcon(get_icon(self, "folder"))
         self.select_output_button.setIcon(get_icon(self, "folder"))
 
+    def retranslate_ui(self, *_args) -> None:
+        self.setWindowTitle(APP_NAME)
+        self.title_label.setText("LOCAL FILE CONVERTER")
+        self.subtitle_label.setText(
+            self.tr("Convert files locally, without sending data to the internet")
+        )
+
+        self.add_files_button.setText(self.tr("Add files"))
+        self.remove_selected_button.setText(self.tr("Remove selected"))
+        self.clear_list_button.setText(self.tr("Clear list"))
+        self.retry_failed_button.setText(self.tr("Retry failed"))
+        self.merge_images_button.setText(self.tr("Merge images into one PDF"))
+        self.settings_button.setText(self.tr("Settings"))
+
+        self.queue_group.setTitle(self.tr("Files"))
+        self.empty_queue_label.setText(
+            self.tr("The list is empty. Add files or drop them into the application.")
+        )
+        self.file_group.setTitle(self.tr("Selected item"))
+        self.file_name_title_label.setText(self.tr("Name:"))
+        self.file_path_title_label.setText(self.tr("Path:"))
+        self.input_format_title_label.setText(self.tr("Input format:"))
+        self.conversion_group.setTitle(self.tr("Selected item settings"))
+        self.output_format_label.setText(self.tr("Output format:"))
+        self.quality_label.setText(self.tr("Quality:"))
+        self.page_mode_label.setText(self.tr("PDF pages:"))
+        self.page_mode_combo.setItemText(0, self.tr("All pages"))
+        self.page_mode_combo.setItemText(1, self.tr("Selected pages"))
+        self.page_range_input.setPlaceholderText(self.tr("Example: 1,3-5,8"))
+        self.multi_page_output_label.setText(self.tr("Multiple PDF pages:"))
+        self.multi_page_output_combo.setItemText(
+            0,
+            self.tr("Plain folder (default)"),
+        )
+        self.multi_page_output_combo.setItemText(1, self.tr("ZIP archive"))
+        self.dpi_label.setText(self.tr("PDF DPI:"))
+        self.output_group.setTitle(self.tr("Output"))
+        self.output_directory_title_label.setText(self.tr("Output folder:"))
+        self.select_output_button.setText(self.tr("Change folder"))
+
+        self.libreoffice_group.setTitle(self.tr("LibreOffice for Office to PDF"))
+        self.libreoffice_program_label.setText(self.tr("Program:"))
+        self.detect_libreoffice_button.setText(self.tr("Detect automatically"))
+        self.select_libreoffice_button.setText(self.tr("Choose soffice.exe"))
+        self.libreoffice_description.setText(
+            self.tr(
+                "LibreOffice is required for DOCX, PPTX, and XLSX conversions. "
+                "The path is saved for the next launch."
+            )
+        )
+
+        self.convert_button.setText(self.tr("CONVERT ALL"))
+        self.cancel_button.setText(self.tr("CANCEL"))
+        self.progress_group.setTitle(self.tr("Progress and status"))
+        self.open_output_button.setText(self.tr("Open output folder"))
+
+        self.file_menu.setTitle(self.tr("File"))
+        self.tools_menu.setTitle(self.tr("Tools"))
+        self.help_menu.setTitle(self.tr("Help"))
+        self.add_files_action.setText(self.tr("Add files"))
+        self.change_output_action.setText(self.tr("Change output folder"))
+        self.exit_action.setText(self.tr("Exit"))
+        self.merge_images_action.setText(self.tr("Merge images into one PDF"))
+        self.settings_action.setText(self.tr("Settings"))
+        self.about_action.setText(self.tr("About"))
+
         self.quality_slider.setToolTip(
-            "Kvaliteta JPG/WEBP izlaza za oznacenu stavku."
+            self.tr("JPG/WEBP output quality for the selected item.")
         )
         self.dpi_combo.setToolTip(
-            "Veci DPI daje detaljnije slike i vece datoteke."
+            self.tr("Higher DPI creates more detailed images and larger files.")
         )
         self.multi_page_output_combo.setToolTip(
-            "Obicna mapa ili ZIP za PDF s vise stranica. "
-            "Iznad 100 MB ZIP se napravi automatski."
+            self.tr(
+                "Plain folder or ZIP for PDFs with multiple pages. Above 100 MB, ZIP is created automatically."
+            )
         )
         self.cancel_button.setToolTip(
-            "Sigurno prekida aktivnu grupnu konverziju."
+            self.tr("Safely cancels the active batch conversion.")
         )
         self.merge_images_button.setToolTip(
-            "Spaja odabrane slike u jedan PDF, zasebno od grupne konverzije."
+            self.tr(
+                "Merges selected images into one PDF, separately from batch conversion."
+            )
         )
         self.retry_failed_button.setToolTip(
-            "Vraća neuspjele stavke u red za ponovno pokretanje."
+            self.tr("Returns failed items to the queue for another run.")
         )
         self.remove_selected_button.setToolTip(
-            "Uklanja oznacene stavke dok grupna konverzija nije aktivna."
+            self.tr("Removes selected items while batch conversion is not active.")
         )
         self.libreoffice_path_input.setToolTip(
-            "Putanja do LibreOffice soffice.exe programa."
+            self.tr("Path to the LibreOffice soffice.exe program.")
         )
+
+        self.drop_area.retranslate_ui()
+        self.queue_widget.retranslate_ui()
+
+        if self.active_item_id is None:
+            self.file_name_label.setText(self.tr("No file selected"))
+
+        if not self.is_converting and not self.items:
+            self.status_label.setText(self.tr("Status: Add files to start."))
+
+        if self.libreoffice_path is None:
+            self.libreoffice_path_input.setPlaceholderText(
+                self.tr("LibreOffice was not found")
+            )
 
     def _connect_signals(self) -> None:
         self.add_files_button.clicked.connect(
@@ -727,9 +775,9 @@ class MainWindow(QMainWindow):
     def _select_files(self) -> None:
         file_paths, _ = QFileDialog.getOpenFileNames(
             self,
-            "Odaberi datoteke",
+            self.tr("Choose files"),
             str(self.app_settings.last_file_dialog_directory),
-            FILE_DIALOG_FILTER,
+            self.tr(FILE_DIALOG_FILTER),
         )
 
         if file_paths:
@@ -764,7 +812,9 @@ class MainWindow(QMainWindow):
                 result.added_items[0].unique_id
             )
             self.status_label.setText(
-                f"Status: Dodano stavki: {len(result.added_items)}"
+                self.tr("Status: Added items: {count}").format(
+                    count=len(result.added_items),
+                )
             )
 
         skipped_count = (
@@ -775,11 +825,17 @@ class MainWindow(QMainWindow):
         if skipped_count:
             QMessageBox.information(
                 self,
-                "Neke datoteke su preskocene",
+                self.tr("Some files were skipped"),
                 (
-                    f"Preskoceno stavki: {skipped_count}\n"
-                    f"Nepodrzano: {len(result.unsupported_paths)}\n"
-                    f"Duplikati: {len(result.duplicate_paths)}"
+                    self.tr(
+                        "Skipped items: {skipped}\n"
+                        "Unsupported: {unsupported}\n"
+                        "Duplicates: {duplicates}"
+                    ).format(
+                        skipped=skipped_count,
+                        unsupported=len(result.unsupported_paths),
+                        duplicates=len(result.duplicate_paths),
+                    )
                 ),
             )
 
@@ -849,7 +905,7 @@ class MainWindow(QMainWindow):
         self.queue_widget.set_items(self.items)
         self._load_active_item(None)
         self.progress_bar.setValue(0)
-        self.status_label.setText("Status: Lista je ociscena.")
+        self.status_label.setText(self.tr("Status: The list was cleared."))
         self._update_controls()
 
     def _retry_failed_items(self) -> None:
@@ -874,8 +930,10 @@ class MainWindow(QMainWindow):
         if self.is_converting:
             QMessageBox.information(
                 self,
-                "Konverzija je u tijeku",
-                "Postavke nije moguce mijenjati dok grupna konverzija radi.",
+                self.tr("Conversion is running"),
+                self.tr(
+                    "Settings cannot be changed while batch conversion is running."
+                ),
             )
             return
 
@@ -910,7 +968,7 @@ class MainWindow(QMainWindow):
                 item.output_directory = self.output_directory
 
         self._refresh_libreoffice_ui()
-        self.status_label.setText("Status: Postavke su spremljene.")
+        self.status_label.setText(self.tr("Status: Settings were saved."))
 
     def _open_about_dialog(self) -> None:
         AboutDialog(self).exec()
@@ -924,7 +982,7 @@ class MainWindow(QMainWindow):
         self._loading_item_controls = True
 
         if item is None:
-            self.file_name_label.setText("Nije odabrana")
+            self.file_name_label.setText(self.tr("No file selected"))
             self.file_path_label.setText("-")
             self.input_format_label.setText("-")
             self.output_format_combo.clear()
@@ -986,7 +1044,7 @@ class MainWindow(QMainWindow):
     def _select_output_directory(self) -> None:
         selected_directory = QFileDialog.getExistingDirectory(
             self,
-            "Odaberi izlaznu mapu",
+            self.tr("Choose output folder"),
             str(self.output_directory),
         )
 
@@ -1005,7 +1063,7 @@ class MainWindow(QMainWindow):
                 item.output_directory = self.output_directory
 
         self.status_label.setText(
-            "Status: Izlazna mapa je promijenjena."
+            self.tr("Status: Output folder was changed.")
         )
 
     def _update_output_directory_label(self) -> None:
@@ -1019,13 +1077,13 @@ class MainWindow(QMainWindow):
 
             if not opened:
                 raise RuntimeError(
-                    "Windows nije uspio otvoriti mapu."
+                    self.tr("Windows could not open the folder.")
                 )
 
         except (OSError, RuntimeError) as error:
             QMessageBox.critical(
                 self,
-                "Greska pri otvaranju mape",
+                self.tr("Folder open error"),
                 str(error),
             )
 
@@ -1119,11 +1177,12 @@ class MainWindow(QMainWindow):
         if detected_path is None:
             QMessageBox.warning(
                 self,
-                "LibreOffice nije pronaden",
+                self.tr("LibreOffice was not found"),
                 (
-                    "LibreOffice nije automatski pronaden. "
-                    "Instaliraj LibreOffice ili rucno odaberi "
-                    "datoteku soffice.exe."
+                    self.tr(
+                        "LibreOffice was not detected automatically. "
+                        "Install LibreOffice or manually choose soffice.exe."
+                    )
                 ),
             )
             return
@@ -1132,7 +1191,7 @@ class MainWindow(QMainWindow):
         save_libreoffice_path(detected_path)
         self._refresh_libreoffice_ui()
         self.status_label.setText(
-            "Status: LibreOffice je uspjesno pronaden."
+            self.tr("Status: LibreOffice was found successfully.")
         )
 
     def _select_libreoffice(self) -> None:
@@ -1145,12 +1204,14 @@ class MainWindow(QMainWindow):
 
         executable_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Odaberi LibreOffice soffice.exe",
+            self.tr("Choose LibreOffice soffice.exe"),
             str(start_directory),
             (
-                "LibreOffice executable (soffice.exe);;"
-                "Izvrsne datoteke (*.exe);;"
-                "Sve datoteke (*.*)"
+                self.tr(
+                    "LibreOffice executable (soffice.exe);;"
+                    "Executables (*.exe);;"
+                    "All files (*.*)"
+                )
             ),
         )
 
@@ -1164,12 +1225,13 @@ class MainWindow(QMainWindow):
         ):
             QMessageBox.warning(
                 self,
-                "Neispravna LibreOffice datoteka",
+                self.tr("Invalid LibreOffice file"),
                 (
-                    "Odaberi datoteku soffice.exe iz LibreOffice "
-                    "programske mape.\n\n"
-                    "Uobicajena putanja je:\n"
-                    r"C:\Program Files\LibreOffice\program\soffice.exe"
+                    self.tr(
+                        "Choose soffice.exe from the LibreOffice program folder.\n\n"
+                        "The usual path is:\n"
+                        r"C:\Program Files\LibreOffice\program\soffice.exe"
+                    )
                 ),
             )
             return
@@ -1178,7 +1240,7 @@ class MainWindow(QMainWindow):
         save_libreoffice_path(self.libreoffice_path)
         self._refresh_libreoffice_ui()
         self.status_label.setText(
-            "Status: LibreOffice putanja je spremljena."
+            self.tr("Status: LibreOffice path was saved.")
         )
 
     def _refresh_libreoffice_ui(self) -> None:
@@ -1195,7 +1257,7 @@ class MainWindow(QMainWindow):
             self.libreoffice_path = None
             self.libreoffice_path_input.clear()
             self.libreoffice_path_input.setPlaceholderText(
-                "LibreOffice nije pronaden"
+                self.tr("LibreOffice was not found")
             )
 
         self._update_controls()
@@ -1300,7 +1362,7 @@ class MainWindow(QMainWindow):
 
         if not runnable_items:
             self.status_label.setText(
-                "Status: Nema stavki spremnih za obradu."
+                self.tr("Status: There are no items ready for processing.")
             )
             return
 
@@ -1325,7 +1387,7 @@ class MainWindow(QMainWindow):
         ]
         self.progress_bar.setValue(0)
         self.status_label.setText(
-            "Status: Pokretanje grupne konverzije..."
+            self.tr("Status: Starting batch conversion...")
         )
         self._set_conversion_running(True)
 
@@ -1386,13 +1448,13 @@ class MainWindow(QMainWindow):
         self.cancel_requested = True
         self.cancel_button.setEnabled(False)
         self.status_label.setText(
-            "Status: Prekid grupne konverzije..."
+            self.tr("Status: Cancelling batch conversion...")
         )
         self.batch_worker.cancel()
 
     def _batch_started(self) -> None:
         self.status_label.setText(
-            "Status: Grupna konverzija je pokrenuta."
+            self.tr("Status: Batch conversion has started.")
         )
 
     def _item_started(self, item_id: str) -> None:
@@ -1408,7 +1470,9 @@ class MainWindow(QMainWindow):
         self.queue_widget.update_item(item)
         self.queue_widget.set_current_item_id(item_id)
         self.status_label.setText(
-            f"Status: Pretvaranje {item.input_path.name}..."
+            self.tr("Status: Converting {file_name}...").format(
+                file_name=item.input_path.name,
+            )
         )
 
     def _item_progress_changed(
@@ -1440,7 +1504,10 @@ class MainWindow(QMainWindow):
 
         if item.unique_id == self.active_item_id:
             self.status_label.setText(
-                f"Status: {item.input_path.name}: {message}"
+                self.tr("Status: {file_name}: {message}").format(
+                    file_name=item.input_path.name,
+                    message=message,
+                )
             )
 
     def _item_finished(
@@ -1457,7 +1524,7 @@ class MainWindow(QMainWindow):
         item.progress = 100
         item.result_path = Path(result_path)
         item.error_message = None
-        item.status_message = "Konverzija je zavrsena."
+        item.status_message = self.tr("Conversion is finished.")
         self.queue_widget.update_item(item)
         self._update_batch_progress()
 
@@ -1487,7 +1554,7 @@ class MainWindow(QMainWindow):
         item.status = ConversionStatus.CANCELLED
         item.error_message = (
             item.error_message
-            or "Konverzija je prekinuta."
+            or self.tr("Conversion was cancelled.")
         )
         item.status_message = item.error_message
         self.queue_widget.update_item(item)
@@ -1495,7 +1562,7 @@ class MainWindow(QMainWindow):
 
     def _batch_cancelled(self) -> None:
         self.status_label.setText(
-            "Status: Grupna konverzija je prekinuta."
+            self.tr("Status: Batch conversion was cancelled.")
         )
 
     def _batch_finished(
@@ -1512,11 +1579,18 @@ class MainWindow(QMainWindow):
         )
         self.progress_bar.setValue(100)
         self.status_label.setText(
-            "Konverzija zavrsena:\n"
-            f"- Uspjesno: {success_count}\n"
-            f"- Neuspjesno: {failed_count}\n"
-            f"- Prekinuto: {cancelled_count}\n"
-            f"- Trajanje: {duration_seconds:.1f} s"
+            self.tr(
+                "Conversion finished:\n"
+                "- Successful: {success_count}\n"
+                "- Failed: {failed_count}\n"
+                "- Cancelled: {cancelled_count}\n"
+                "- Duration: {duration_seconds:.1f} s"
+            ).format(
+                success_count=success_count,
+                failed_count=failed_count,
+                cancelled_count=cancelled_count,
+                duration_seconds=duration_seconds,
+            )
         )
 
         if (
@@ -1525,12 +1599,18 @@ class MainWindow(QMainWindow):
         ):
             QMessageBox.information(
                 self,
-                "Sažetak konverzije",
+                self.tr("Conversion summary"),
                 (
-                    "Konverzija završena:\n"
-                    f"- Uspješno: {success_count}\n"
-                    f"- Neuspješno: {failed_count}\n"
-                    f"- Prekinuto: {cancelled_count}"
+                    self.tr(
+                        "Conversion finished:\n"
+                        "- Successful: {success_count}\n"
+                        "- Failed: {failed_count}\n"
+                        "- Cancelled: {cancelled_count}"
+                    ).format(
+                        success_count=success_count,
+                        failed_count=failed_count,
+                        cancelled_count=cancelled_count,
+                    )
                 ),
             )
 
@@ -1662,16 +1742,18 @@ class MainWindow(QMainWindow):
         if self.is_converting:
             message_box = QMessageBox(self)
             message_box.setIcon(QMessageBox.Icon.Question)
-            message_box.setWindowTitle("Konverzija je u tijeku")
+            message_box.setWindowTitle(self.tr("Conversion is running"))
             message_box.setText(
-                "Konverzija je u tijeku. Zelis li je prekinuti i zatvoriti aplikaciju?"
+                self.tr(
+                    "Conversion is running. Do you want to cancel it and close the application?"
+                )
             )
             continue_button = message_box.addButton(
-                "Nastavi konverziju",
+                self.tr("Continue conversion"),
                 QMessageBox.ButtonRole.RejectRole,
             )
             stop_button = message_box.addButton(
-                "Prekini i zatvori",
+                self.tr("Cancel and close"),
                 QMessageBox.ButtonRole.DestructiveRole,
             )
             message_box.setDefaultButton(continue_button)
@@ -1680,7 +1762,7 @@ class MainWindow(QMainWindow):
             if message_box.clickedButton() == stop_button:
                 self._closing_after_cancel = True
                 self.status_label.setText(
-                    "Status: Prekid konverzije i zatvaranje aplikacije..."
+                    self.tr("Status: Cancelling conversion and closing the application...")
                 )
                 self._cancel_conversion()
 
