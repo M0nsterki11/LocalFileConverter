@@ -187,8 +187,6 @@ The current installer is not digitally signed. Windows SmartScreen may show
 Unknown publisher. `installer_output/` is not committed; Setup EXE files are
 published later as GitHub Release assets.
 
-Screenshot
+App Screenshot (not added yet)
 ----------
 
-Screenshot placeholder: add an application screenshot here when one is captured
-for the repository.
