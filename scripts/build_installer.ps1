@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Resolve-Path (Join-Path $ScriptDir "..")
 $PythonExe = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+$BuildHelpers = Join-Path $ProjectRoot "scripts\build_helpers.ps1"
 $ReleaseBuildScript = Join-Path $ProjectRoot "scripts\build_release.ps1"
 $TranslationsScript = Join-Path $ProjectRoot "scripts\build_translations.ps1"
 $VerifyBuildScript = Join-Path $ProjectRoot "scripts\verify_build.py"
@@ -123,12 +124,15 @@ function Validate-LibreOfficeConfig {
 
 if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "The .venv folder is missing." }
 if (-not (Test-Path $PythonExe)) { Stop-Build ".venv\Scripts\python.exe is missing." }
+if (-not (Test-Path $BuildHelpers)) { Stop-Build "scripts\build_helpers.ps1 is missing." }
 if (-not (Test-Path $ReleaseBuildScript)) { Stop-Build "scripts\build_release.ps1 is missing." }
 if (-not (Test-Path $TranslationsScript)) { Stop-Build "scripts\build_translations.ps1 is missing." }
 if (-not (Test-Path $VerifyBuildScript)) { Stop-Build "scripts\verify_build.py is missing." }
 if (-not (Test-Path $VersionScript)) { Stop-Build "scripts\generate_installer_version.py is missing." }
 if (-not (Test-Path $VerifyInstallerScript)) { Stop-Build "scripts\verify_installer.py is missing." }
 if (-not (Test-Path $InstallerScript)) { Stop-Build "packaging\LocalFileConverter.iss is missing." }
+
+. $BuildHelpers
 
 $Iscc = Find-Iscc
 if (-not $Iscc) {
@@ -143,7 +147,7 @@ if ($LASTEXITCODE -ne 0) { Stop-Build "Translation compilation failed." }
 if (-not (Test-Path $TranslationFile)) { Stop-Build "The compiled Croatian translation is missing: $TranslationFile" }
 
 if (-not $SkipTests) {
-    & $PythonExe -m pytest -q
+    Invoke-ProjectPytest -PythonExe $PythonExe -ProjectRoot $ProjectRoot -PytestArgs @("-q")
     if ($LASTEXITCODE -ne 0) { Stop-Build "Tests failed; the installer build was stopped." }
 }
 
