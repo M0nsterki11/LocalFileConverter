@@ -23,6 +23,13 @@ resources_path = project_root / "resources"
 translations_path = project_root / "translations"
 icon_path = project_root / "resources" / "app_icon.ico"
 version_path = project_root / "packaging" / "windows_version_info.txt"
+notice_files = [
+    (project_root / "LICENSE", "."),
+    (project_root / "NOTICE", "."),
+    (project_root / "SOURCE_CODE.md", "."),
+    (project_root / "packaging" / "THIRD_PARTY_NOTICES.txt", "."),
+    (project_root / "licenses" / "PyMuPDF-COPYING", "licenses"),
+]
 
 datas = []
 
@@ -31,6 +38,12 @@ if resources_path.exists():
 
 if translations_path.exists():
     datas.append((str(translations_path), "translations"))
+
+for notice_path, destination in notice_files:
+    if not notice_path.exists():
+        raise FileNotFoundError(f"Required notice file is missing: {notice_path}")
+
+    datas.append((str(notice_path), destination))
 
 if not icon_path.exists():
     raise FileNotFoundError(f"Application icon is required: {icon_path}")

@@ -433,6 +433,8 @@ C:\Program Files\LibreOffice\program\soffice.exe</translation>
     <name>AboutDialog</name>
     <message><source>About {app_name}</source><translation>O aplikaciji {app_name}</translation></message>
     <message><source>Version {version}</source><translation>Verzija {version}</translation></message>
+    <message><source>Licensed under GNU AGPL version 3 only</source><translation>Licencirano pod GNU AGPL verzijom 3 samo</translation></message>
+    <message><source>No warranty</source><translation>Bez jamstva</translation></message>
     <message>
         <source>Local File Converter processes files locally. Data is not sent to the internet.
 
@@ -442,6 +444,7 @@ The application is built with Python and PySide6. LibreOffice is used as an exte
 
 The application stores a local technical log for errors. The log does not contain document contents, and you can open or delete it from your user folder.
 
+Source code: {github_url}
 GitHub: {github_url}
 Copyright {year}</source>
         <translation>Local File Converter obrađuje datoteke lokalno. Podaci se ne šalju na internet.
@@ -452,11 +455,17 @@ Aplikacija je izrađena u Pythonu i PySide6. LibreOffice se koristi kao vanjski 
 
 Aplikacija sprema lokalni tehnički log za greške. Log ne sadrži sadržaj dokumenata i možete ga otvoriti ili obrisati iz korisničke mape.
 
+Izvorni kod: {github_url}
 GitHub: {github_url}
 Copyright {year}</translation>
     </message>
+    <message><source>View license</source><translation>Prikaži licencu</translation></message>
+    <message><source>Third-party notices</source><translation>Obavijesti trećih strana</translation></message>
+    <message><source>Source code</source><translation>Izvorni kod</translation></message>
     <message><source>Open log folder</source><translation>Otvori mapu s logovima</translation></message>
     <message><source>Close</source><translation>Zatvori</translation></message>
+    <message><source>Could not open document</source><translation>Dokument nije moguće otvoriti</translation></message>
+    <message><source>The document could not be opened. Technical details were saved to the log.</source><translation>Dokument nije moguće otvoriti. Tehnički detalji spremljeni su u log.</translation></message>
 </context>
 <context>
     <name>ErrorDetailsDialog</name>

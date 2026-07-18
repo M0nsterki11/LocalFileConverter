@@ -39,10 +39,17 @@ Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]
 Source: "..\dist\LocalFileConverter\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\SOURCE_CODE.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "THIRD_PARTY_NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\licenses\PyMuPDF-COPYING"; DestDir: "{app}\licenses"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
+Name: "{group}\License"; Filename: "{app}\LICENSE"
+Name: "{group}\Third-Party Notices"; Filename: "{app}\THIRD_PARTY_NOTICES.txt"
+Name: "{group}\Source Code Information"; Filename: "{app}\SOURCE_CODE.md"
 Name: "{group}\Uninstall Local File Converter"; Filename: "{uninstallexe}"; IconFilename: "{app}\{#AppExeName}"
 Name: "{autodesktop}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
 

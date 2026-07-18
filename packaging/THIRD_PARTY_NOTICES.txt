@@ -8,8 +8,14 @@ distribution.
 Project License
 ---------------
 
-No project LICENSE file is currently present in this repository. Borna must
-choose and add the project license before a public release.
+Original Local File Converter project code:
+Copyright (C) 2026 Borna
+
+License: GNU Affero General Public License version 3 only.
+SPDX expression for original project code: AGPL-3.0-only
+
+The full license text is included in LICENSE. Source availability information
+is included in SOURCE_CODE.md.
 
 Python
 ------
@@ -38,10 +44,22 @@ PyMuPDF / MuPDF
 
 Package: pymupdf
 Version: 1.28.0
-Metadata license: Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License
+Bundled MuPDF runtime reported by PyMuPDF: 1.29.0
+Attribution: Artifex Software, Inc.
+Upstream license wording: Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License
 
-Important: PyMuPDF/MuPDF licensing must be confirmed before public release.
-Using PyMuPDF may require AGPL compliance or an Artifex commercial license.
+The exact installed PyMuPDF package evidence was inconsistent about the
+precise SPDX expression, so this notice intentionally does not assign a
+precise SPDX expression to PyMuPDF/MuPDF.
+
+The installed PyMuPDF COPYING notice is included as:
+
+licenses/PyMuPDF-COPYING
+
+PyMuPDF/MuPDF may be used under the open-source AGPL terms. A commercial Artifex license is required when the AGPL terms cannot be satisfied.
+
+The PyMuPDF/MuPDF runtime version mismatch is upstream package evidence from
+the installed PyPI wheel, not a Local File Converter conversion bug.
 
 PyInstaller
 -----------

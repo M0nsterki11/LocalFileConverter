@@ -120,12 +120,28 @@ def test_main_settings_and_about_runtime_language_switch(
         assert main_window.add_files_button.text() == "Add files"
         assert settings_dialog.windowTitle() == "Settings"
         assert about_dialog.windowTitle() == f"About {APP_NAME}"
+        assert about_dialog.license_label.text() == (
+            "Licensed under GNU AGPL version 3 only"
+        )
+        assert about_dialog.warranty_label.text() == "No warranty"
+        assert about_dialog.license_button.text() == "View license"
+        assert about_dialog.third_party_button.text() == "Third-party notices"
+        assert about_dialog.source_code_button.text() == "Source code"
 
         get_translation_manager().set_language("hr")
 
         assert main_window.add_files_button.text() == "Dodaj datoteke"
         assert settings_dialog.windowTitle() == "Postavke"
         assert about_dialog.windowTitle() == f"O aplikaciji {APP_NAME}"
+        assert about_dialog.license_label.text() == (
+            "Licencirano pod GNU AGPL verzijom 3 samo"
+        )
+        assert about_dialog.warranty_label.text() == "Bez jamstva"
+        assert about_dialog.license_button.text() == "Prikaži licencu"
+        assert about_dialog.third_party_button.text() == (
+            "Obavijesti trećih strana"
+        )
+        assert about_dialog.source_code_button.text() == "Izvorni kod"
     finally:
         main_window.close()
         settings_dialog.close()

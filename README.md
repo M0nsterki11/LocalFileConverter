@@ -12,6 +12,46 @@ files or temporary folders, and the final name is published only after a
 successful conversion. If conversion fails or the user cancels it, the app
 removes only its own incomplete temporary results.
 
+License
+-------
+
+Local File Converter's original project code is licensed under the GNU Affero
+General Public License version 3 only. The full license text is in `LICENSE`.
+
+Source Code
+-----------
+
+The public source repository is:
+
+```text
+https://github.com/M0nsterki11/LocalFileConverter
+```
+
+Source code for released binaries is available from the corresponding Git tag
+in that repository. Release `0.5.0` must correspond to tag `v0.5.0`.
+
+Third-Party Software
+--------------------
+
+The Windows build includes third-party software under separate licenses. Those
+licenses are summarized in `packaging\THIRD_PARTY_NOTICES.txt`, and the
+installer places the notices next to the installed application.
+
+PyMuPDF/MuPDF is separate third-party software using the upstream wording:
+Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License. A commercial
+Artifex license is required when the AGPL terms cannot be satisfied. The
+included PyMuPDF notice is in `licenses\PyMuPDF-COPYING`.
+
+LibreOffice is optional and downloaded separately by the installer only if the
+user chooses that option and LibreOffice is not already detected. LibreOffice
+is not bundled in Local File Converter Setup.exe.
+
+No Warranty
+-----------
+
+Local File Converter is distributed without warranty, to the extent permitted
+by applicable law. See `LICENSE` for the complete warranty disclaimer.
+
 Supported Conversions
 ---------------------
 
@@ -58,14 +98,18 @@ When an error occurs, the user sees a short message and technical details are
 saved to the log. One failed item in a batch conversion does not stop later
 items.
 
-Running From Source
--------------------
+Building From Source
+--------------------
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe main.py
 ```
+
+The repository includes build scripts, dependency declarations, PyInstaller
+configuration, Inno Setup packaging configuration, resources, and translations
+needed to rebuild the release artifacts.
 
 Development Tests
 -----------------
@@ -187,6 +231,15 @@ The current installer is not digitally signed. Windows SmartScreen may show
 Unknown publisher. `installer_output/` is not committed; Setup EXE files are
 published later as GitHub Release assets.
 
+Release Source Correspondence
+-----------------------------
+
+Release binaries must correspond to a Git tag. For version `0.5.0`, publish the
+installer only after tag `v0.5.0` exists in the public repository and points to
+the exact source state used to build the ONEDIR application and Setup EXE.
+
+The installed `SOURCE_CODE.md` file tells users where to obtain the
+corresponding source and which tag applies to the installed version.
+
 App Screenshot (not added yet)
 ----------
-
