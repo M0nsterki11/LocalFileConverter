@@ -6,13 +6,13 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Resolve-Path (Join-Path $ScriptDir "..")
 $PythonExe = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
-$SpecFile = Join-Path $ProjectRoot "LocalFileConverter.spec"
+$SpecFile = Join-Path $ProjectRoot "MyFileConverter.spec"
 $MainFile = Join-Path $ProjectRoot "main.py"
 $BuildHelpers = Join-Path $ProjectRoot "scripts\build_helpers.ps1"
 $VersionScript = Join-Path $ProjectRoot "scripts\generate_windows_version_info.py"
 $TranslationsScript = Join-Path $ProjectRoot "scripts\build_translations.ps1"
 $IconFile = Join-Path $ProjectRoot "resources\app_icon.ico"
-$OutputExe = Join-Path $ProjectRoot "dist\LocalFileConverterDebug\LocalFileConverterDebug.exe"
+$OutputExe = Join-Path $ProjectRoot "dist\MyFileConverterDebug\MyFileConverterDebug.exe"
 
 function Stop-Build($Message) {
     Write-Error $Message
@@ -22,7 +22,7 @@ function Stop-Build($Message) {
 if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "The .venv folder is missing." }
 if (-not (Test-Path $PythonExe)) { Stop-Build ".venv\Scripts\python.exe is missing." }
 if (-not (Test-Path $MainFile)) { Stop-Build "main.py is missing." }
-if (-not (Test-Path $SpecFile)) { Stop-Build "LocalFileConverter.spec is missing." }
+if (-not (Test-Path $SpecFile)) { Stop-Build "MyFileConverter.spec is missing." }
 if (-not (Test-Path $BuildHelpers)) { Stop-Build "scripts\build_helpers.ps1 is missing." }
 if (-not (Test-Path $TranslationsScript)) { Stop-Build "The translation build script is missing." }
 if (-not (Test-Path $IconFile)) { Stop-Build "resources\app_icon.ico is missing; the icon is required for debug builds." }

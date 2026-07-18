@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication
 from app.constants import (
     APP_NAME,
     APP_ORGANIZATION,
+    APP_SETTINGS_APPLICATION_NAME,
     APP_VERSION,
 )
 from app.dialogs.error_dialog import ErrorDetailsDialog
@@ -30,7 +31,7 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     app.setOrganizationName(APP_ORGANIZATION)
-    app.setApplicationName(APP_NAME)
+    app.setApplicationName(APP_SETTINGS_APPLICATION_NAME)
     _install_global_exception_hook()
     app.aboutToQuit.connect(
         lambda: logger.info("Closing %s version=%s", APP_NAME, APP_VERSION)

@@ -436,7 +436,7 @@ C:\Program Files\LibreOffice\program\soffice.exe</translation>
     <message><source>Licensed under GNU AGPL version 3 only</source><translation>Licencirano pod GNU AGPL verzijom 3 samo</translation></message>
     <message><source>No warranty</source><translation>Bez jamstva</translation></message>
     <message>
-        <source>Local File Converter processes files locally. Data is not sent to the internet.
+        <source>MyFile Converter processes files locally. Data is not sent to the internet.
 
 It supports image conversions, PDF conversions, Office documents to PDF, and merging multiple images into one PDF.
 
@@ -447,7 +447,7 @@ The application stores a local technical log for errors. The log does not contai
 Source code: {github_url}
 GitHub: {github_url}
 Copyright {year}</source>
-        <translation>Local File Converter obrađuje datoteke lokalno. Podaci se ne šalju na internet.
+        <translation>MyFile Converter obrađuje datoteke lokalno. Podaci se ne šalju na internet.
 
 Podržava konverzije slika, PDF konverzije, Office dokumente u PDF i spajanje više slika u jedan PDF.
 

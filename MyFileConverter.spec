@@ -12,11 +12,11 @@ is_debug = build_mode == "debug"
 is_onefile = build_target == "onefile"
 
 app_name = (
-    "LocalFileConverterOnefile"
+    "MyFileConverterOnefile"
     if is_onefile
-    else "LocalFileConverterDebug"
+    else "MyFileConverterDebug"
     if is_debug
-    else "LocalFileConverter"
+    else "MyFileConverter"
 )
 
 resources_path = project_root / "resources"

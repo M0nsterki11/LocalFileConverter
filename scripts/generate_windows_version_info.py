@@ -57,12 +57,12 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [
-          StringStruct('CompanyName', 'LocalFileConverter'),
-          StringStruct('FileDescription', 'Local File Converter'),
+          StringStruct('CompanyName', 'MyFile Converter'),
+          StringStruct('FileDescription', 'MyFile Converter'),
           StringStruct('FileVersion', '{version}'),
-          StringStruct('InternalName', 'LocalFileConverter'),
-          StringStruct('OriginalFilename', 'LocalFileConverter.exe'),
-          StringStruct('ProductName', 'Local File Converter'),
+          StringStruct('InternalName', 'MyFileConverter'),
+          StringStruct('OriginalFilename', 'MyFileConverter.exe'),
+          StringStruct('ProductName', 'MyFile Converter'),
           StringStruct('ProductVersion', '{version}'),
           StringStruct('LegalCopyright', 'Copyright {year}')
         ]

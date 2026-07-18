@@ -1,4 +1,4 @@
-# LocalFileConverter Installer Smoke Test Checklist
+# MyFileConverter Installer Smoke Test Checklist
 
 ## Installation
 
@@ -47,7 +47,7 @@
 
 ### C. LibreOffice is not installed and the user declines or cancels
 
-- Local File Converter installs normally.
+- MyFile Converter installs normally.
 - No LibreOffice MSI is run without explicit user consent.
 - Image and PDF conversions still work.
 - Office conversions show a clear message that LibreOffice is required.

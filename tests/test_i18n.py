@@ -175,7 +175,7 @@ def test_translation_resources_are_packaged() -> None:
         PROJECT_ROOT / "translations" / "local_file_converter_hr.qm"
     ).stat().st_size > 0
 
-    spec_text = (PROJECT_ROOT / "LocalFileConverter.spec").read_text(
+    spec_text = (PROJECT_ROOT / "MyFileConverter.spec").read_text(
         encoding="utf-8"
     )
     verify_build_text = (

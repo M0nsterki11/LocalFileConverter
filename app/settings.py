@@ -16,7 +16,7 @@ DEFAULT_THEME = "system"
 DEFAULT_OUTPUT_DIRECTORY = (
     Path.home()
     / "Documents"
-    / "LocalFileConverter"
+    / "MyFileConverter"
     / "Converted"
 )
 DEFAULT_OPEN_OUTPUT_AFTER_SUCCESS = False

@@ -1,7 +1,7 @@
-# LocalFileConverter ONEDIR Smoke Test Checklist
+# MyFileConverter ONEDIR Smoke Test Checklist
 
-Run these checks from `dist\LocalFileConverter\LocalFileConverter.exe`.
-Copy the whole `dist\LocalFileConverter\` folder when testing on another PC.
+Run these checks from `dist\MyFileConverter\MyFileConverter.exe`.
+Copy the whole `dist\MyFileConverter\` folder when testing on another PC.
 
 ## Startup
 

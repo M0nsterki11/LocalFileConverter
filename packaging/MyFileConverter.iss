@@ -10,7 +10,7 @@ AppId={#AppIdGuid}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
-DefaultDirName={localappdata}\Programs\LocalFileConverter
+DefaultDirName={localappdata}\Programs\MyFileConverter
 DefaultGroupName={#AppName}
 DisableDirPage=no
 DisableProgramGroupPage=yes
@@ -38,7 +38,7 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]
-Source: "..\dist\LocalFileConverter\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\MyFileConverter\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\SOURCE_CODE.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -46,15 +46,15 @@ Source: "THIRD_PARTY_NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\licenses\PyMuPDF-COPYING"; DestDir: "{app}\licenses"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
+Name: "{group}\MyFile Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
 Name: "{group}\License"; Filename: "{app}\LICENSE"
 Name: "{group}\Third-Party Notices"; Filename: "{app}\THIRD_PARTY_NOTICES.txt"
 Name: "{group}\Source Code Information"; Filename: "{app}\SOURCE_CODE.md"
-Name: "{group}\Uninstall Local File Converter"; Filename: "{uninstallexe}"; IconFilename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\Local File Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{group}\Uninstall MyFile Converter"; Filename: "{uninstallexe}"; IconFilename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\MyFile Converter"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "Launch Local File Converter"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "Launch MyFile Converter"; Flags: nowait postinstall skipifsilent
 
 [Code]
 const
@@ -266,7 +266,7 @@ begin
       if LibreOfficeDownloadPage.AbortedByUser then begin
         Log('LibreOffice download cancelled by user.');
         SuppressibleMsgBox(
-          'LibreOffice download was cancelled. Local File Converter will still be installed.'#13#13 +
+          'LibreOffice download was cancelled. MyFile Converter will still be installed.'#13#13 +
           'DOCX, PPTX and XLSX to PDF conversion will require LibreOffice later.',
           mbInformation,
           MB_OK,
@@ -278,7 +278,7 @@ begin
         SuppressibleMsgBox(
           'LibreOffice could not be downloaded or verified.'#13#13 +
           Error + #13#13 +
-          'Local File Converter will still be installed without LibreOffice.',
+          'MyFile Converter will still be installed without LibreOffice.',
           mbCriticalError,
           MB_OK,
           IDOK
@@ -319,7 +319,7 @@ begin
   SuppressibleMsgBox(
     'Security check failed for the downloaded LibreOffice installer.'#13#13 +
     'The downloaded MSI will not be started and has been removed.'#13#13 +
-    'Local File Converter will still be installed without LibreOffice.',
+    'MyFile Converter will still be installed without LibreOffice.',
     mbCriticalError,
     MB_OK,
     IDOK
@@ -350,7 +350,7 @@ begin
     Log('Could not start msiexec for LibreOffice. Error code: ' + IntToStr(ResultCode));
     SuppressibleMsgBox(
       'LibreOffice installer could not be started.'#13#13 +
-      'Local File Converter will still be installed. You can install LibreOffice later.',
+      'MyFile Converter will still be installed. You can install LibreOffice later.',
       mbError,
       MB_OK,
       IDOK
@@ -367,7 +367,7 @@ begin
   if ResultCode = 1602 then begin
     Log('LibreOffice MSI was cancelled by user.');
     SuppressibleMsgBox(
-      'LibreOffice installation was cancelled. Local File Converter will still be installed.'#13#13 +
+      'LibreOffice installation was cancelled. MyFile Converter will still be installed.'#13#13 +
       'Office conversions will require LibreOffice later.',
       mbInformation,
       MB_OK,
@@ -377,7 +377,7 @@ begin
     Log('LibreOffice MSI finished with non-success code ' + IntToStr(ResultCode));
     SuppressibleMsgBox(
       'LibreOffice installation did not complete successfully.'#13#13 +
-      'Local File Converter will still be installed. You can install LibreOffice later.'#13#13 +
+      'MyFile Converter will still be installed. You can install LibreOffice later.'#13#13 +
       'LibreOffice installer exit code: ' + IntToStr(ResultCode),
       mbError,
       MB_OK,

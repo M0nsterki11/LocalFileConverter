@@ -27,9 +27,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--bundle",
-        default=str(PROJECT_ROOT / "dist" / "LocalFileConverter"),
+        default=str(PROJECT_ROOT / "dist" / "MyFileConverter"),
     )
-    parser.add_argument("--name", default="LocalFileConverter")
+    parser.add_argument("--name", default="MyFileConverter")
     args = parser.parse_args()
 
     bundle_path = Path(args.bundle)
@@ -114,7 +114,7 @@ def _check_legal_notice_files(errors: list[str]) -> None:
         errors.append("LICENSE does not contain the AGPL version 3 date.")
 
     required_notice = (
-        "Local File Converter's original project code is licensed under the "
+        "MyFile Converter's original project code is licensed under the "
         "GNU\nAffero General Public License version 3 only."
     )
 

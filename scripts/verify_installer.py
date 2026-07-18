@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 INSTALLER_OUTPUT = PROJECT_ROOT / "installer_output"
 LIBREOFFICE_CONFIG = PROJECT_ROOT / "packaging" / "libreoffice_dependency.json"
 THIRD_PARTY_NOTICES = PROJECT_ROOT / "packaging" / "THIRD_PARTY_NOTICES.txt"
-INSTALLER_SCRIPT = PROJECT_ROOT / "packaging" / "LocalFileConverter.iss"
+INSTALLER_SCRIPT = PROJECT_ROOT / "packaging" / "MyFileConverter.iss"
 APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
 LICENSE_PATH = PROJECT_ROOT / "LICENSE"
 NOTICE_PATH = PROJECT_ROOT / "NOTICE"
@@ -23,7 +23,7 @@ PYMUPDF_COPYING = PROJECT_ROOT / "licenses" / "PyMuPDF-COPYING"
 TRANSLATION_PATH = (
     PROJECT_ROOT / "translations" / "local_file_converter_hr.qm"
 )
-ONEDIR_BUNDLE = PROJECT_ROOT / "dist" / "LocalFileConverter"
+ONEDIR_BUNDLE = PROJECT_ROOT / "dist" / "MyFileConverter"
 PUBLIC_REPOSITORY_URL = "https://github.com/M0nsterki11/LocalFileConverter"
 PYMUPDF_LICENSE_WORDING = (
     "Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License"
@@ -57,7 +57,7 @@ def main() -> int:
     installer_path = (
         Path(args.installer)
         if args.installer
-        else INSTALLER_OUTPUT / f"LocalFileConverter_Setup_{version}_x64.exe"
+        else INSTALLER_OUTPUT / f"MyFileConverter_Setup_{version}_x64.exe"
     )
     errors: list[str] = []
 
@@ -69,12 +69,20 @@ def main() -> int:
     if version not in installer_path.name:
         errors.append("Installer name does not contain APP_VERSION.")
 
+    expected_installer_name = f"MyFileConverter_Setup_{version}_x64.exe"
+
+    if installer_path.name != expected_installer_name:
+        errors.append(
+            f"Installer name must be {expected_installer_name}, "
+            f"got {installer_path.name}."
+        )
+
     if "x64" not in installer_path.name.casefold():
         errors.append("Installer name does not contain the x64 marker.")
 
     try:
         installer_path.resolve().relative_to(
-            (PROJECT_ROOT / "dist" / "LocalFileConverter").resolve()
+            (PROJECT_ROOT / "dist" / "MyFileConverter").resolve()
         )
         errors.append("Installer output is inside the dist app folder.")
     except ValueError:
@@ -92,6 +100,7 @@ def main() -> int:
     )
     _check_installer_icon_configuration(errors)
     _check_installer_notice_configuration(errors)
+    _check_installer_version_include(errors, version)
     _check_installer_setup_configuration(errors)
     _check_libreoffice_installer_flow(errors)
     _check_bundle_icon(errors)
@@ -296,6 +305,7 @@ def _check_installer_setup_configuration(errors: list[str]) -> None:
 
     required_snippets = {
         "fixed AppId": APP_ID_GUID.casefold(),
+        "MyFile default directory": "defaultdirname={localappdata}\\programs\\myfileconverter",
         "DisableDirPage=no": "disabledirpage=no",
         "UsePreviousAppDir=yes": "usepreviousappdir=yes",
         "per-user privileges": "privilegesrequired=lowest",
@@ -306,6 +316,27 @@ def _check_installer_setup_configuration(errors: list[str]) -> None:
     for label, snippet in required_snippets.items():
         if snippet not in normalized:
             errors.append(f"Inno Setup script is missing {label}.")
+
+
+def _check_installer_version_include(errors: list[str], version: str) -> None:
+    version_include = PROJECT_ROOT / "packaging" / "generated_version.iss"
+
+    if not version_include.exists():
+        errors.append(f"Installer version include does not exist: {version_include}")
+        return
+
+    normalized = _normalize_iss_text(version_include.read_text(encoding="utf-8"))
+    required_snippets = {
+        "AppName": '#define appname "myfile converter"',
+        "AppExeName": '#define appexename "myfileconverter.exe"',
+        "AppSetupBaseName": (
+            f'#define appsetupbasename "myfileconverter_setup_{version}_x64"'
+        ),
+    }
+
+    for label, snippet in required_snippets.items():
+        if snippet not in normalized:
+            errors.append(f"Installer version include is missing {label}.")
 
 
 def _check_libreoffice_installer_flow(errors: list[str]) -> None:

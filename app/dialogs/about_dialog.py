@@ -120,7 +120,7 @@ class AboutDialog(QDialog):
         self.warranty_label.setText(self.tr("No warranty"))
         self.body_label.setText(
             self.tr(
-                "Local File Converter processes files locally. "
+                "MyFile Converter processes files locally. "
                 "Data is not sent to the internet.\n\n"
                 "It supports image conversions, PDF conversions, Office "
                 "documents to PDF, and merging multiple images into one PDF.\n\n"

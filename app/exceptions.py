@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 class LocalFileConverterError(Exception):
-    """Base class for expected Local File Converter errors."""
+    """Base class for expected MyFile Converter errors."""
 
     def __init__(
         self,

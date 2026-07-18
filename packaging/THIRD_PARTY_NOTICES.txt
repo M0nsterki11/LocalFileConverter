@@ -1,5 +1,5 @@
-Local File Converter - Third-Party Notices
-==========================================
+MyFile Converter - Third-Party Notices
+======================================
 
 This file summarizes third-party components distributed with the Windows
 build. It is not legal advice. Review upstream licenses before public
@@ -8,7 +8,7 @@ distribution.
 Project License
 ---------------
 
-Original Local File Converter project code:
+Original MyFile Converter project code:
 Copyright (C) 2026 Borna
 
 License: GNU Affero General Public License version 3 only.
@@ -59,7 +59,7 @@ licenses/PyMuPDF-COPYING
 PyMuPDF/MuPDF may be used under the open-source AGPL terms. A commercial Artifex license is required when the AGPL terms cannot be satisfied.
 
 The PyMuPDF/MuPDF runtime version mismatch is upstream package evidence from
-the installed PyPI wheel, not a Local File Converter conversion bug.
+the installed PyPI wheel, not a MyFile Converter conversion bug.
 
 PyInstaller
 -----------

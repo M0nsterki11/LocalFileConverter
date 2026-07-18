@@ -6,14 +6,14 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = Resolve-Path (Join-Path $ScriptDir "..")
 $PythonExe = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
-$SpecFile = Join-Path $ProjectRoot "LocalFileConverter.spec"
+$SpecFile = Join-Path $ProjectRoot "MyFileConverter.spec"
 $MainFile = Join-Path $ProjectRoot "main.py"
 $BuildHelpers = Join-Path $ProjectRoot "scripts\build_helpers.ps1"
 $VersionScript = Join-Path $ProjectRoot "scripts\generate_windows_version_info.py"
 $TranslationsScript = Join-Path $ProjectRoot "scripts\build_translations.ps1"
 $VerifyScript = Join-Path $ProjectRoot "scripts\verify_build.py"
 $IconFile = Join-Path $ProjectRoot "resources\app_icon.ico"
-$OutputExe = Join-Path $ProjectRoot "dist\LocalFileConverter\LocalFileConverter.exe"
+$OutputExe = Join-Path $ProjectRoot "dist\MyFileConverter\MyFileConverter.exe"
 
 function Stop-Build($Message) {
     Write-Error $Message
@@ -23,7 +23,7 @@ function Stop-Build($Message) {
 if (-not (Test-Path (Join-Path $ProjectRoot ".venv"))) { Stop-Build "The .venv folder is missing." }
 if (-not (Test-Path $PythonExe)) { Stop-Build ".venv\Scripts\python.exe is missing." }
 if (-not (Test-Path $MainFile)) { Stop-Build "main.py is missing." }
-if (-not (Test-Path $SpecFile)) { Stop-Build "LocalFileConverter.spec is missing." }
+if (-not (Test-Path $SpecFile)) { Stop-Build "MyFileConverter.spec is missing." }
 if (-not (Test-Path $BuildHelpers)) { Stop-Build "scripts\build_helpers.ps1 is missing." }
 if (-not (Test-Path $VersionScript)) { Stop-Build "The Windows version info generator is missing." }
 if (-not (Test-Path $TranslationsScript)) { Stop-Build "The translation build script is missing." }
@@ -59,7 +59,7 @@ Remove-Item Env:\LFC_BUILD_TARGET -ErrorAction SilentlyContinue
 if ($buildExitCode -ne 0) { Stop-Build "The PyInstaller release build failed." }
 if (-not (Test-Path $OutputExe)) { Stop-Build "The expected EXE was not found: $OutputExe" }
 
-& $PythonExe $VerifyScript --bundle (Join-Path $ProjectRoot "dist\LocalFileConverter") --name "LocalFileConverter"
+& $PythonExe $VerifyScript --bundle (Join-Path $ProjectRoot "dist\MyFileConverter") --name "MyFileConverter"
 if ($LASTEXITCODE -ne 0) { Stop-Build "Build verification failed." }
 
 Write-Host "Release build is ready: $OutputExe"

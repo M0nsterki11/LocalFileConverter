@@ -14,11 +14,11 @@ $TranslationsScript = Join-Path $ProjectRoot "scripts\build_translations.ps1"
 $VerifyBuildScript = Join-Path $ProjectRoot "scripts\verify_build.py"
 $VersionScript = Join-Path $ProjectRoot "scripts\generate_installer_version.py"
 $VerifyInstallerScript = Join-Path $ProjectRoot "scripts\verify_installer.py"
-$InstallerScript = Join-Path $ProjectRoot "packaging\LocalFileConverter.iss"
+$InstallerScript = Join-Path $ProjectRoot "packaging\MyFileConverter.iss"
 $LibreOfficeConfig = Join-Path $ProjectRoot "packaging\libreoffice_dependency.json"
 $LibreOfficeInclude = Join-Path $ProjectRoot "packaging\generated_libreoffice_dependency.iss"
-$OnedirBundle = Join-Path $ProjectRoot "dist\LocalFileConverter"
-$OnedirExe = Join-Path $OnedirBundle "LocalFileConverter.exe"
+$OnedirBundle = Join-Path $ProjectRoot "dist\MyFileConverter"
+$OnedirExe = Join-Path $OnedirBundle "MyFileConverter.exe"
 $InstallerOutput = Join-Path $ProjectRoot "installer_output"
 $IconFile = Join-Path $ProjectRoot "resources\app_icon.ico"
 $TranslationFile = Join-Path $ProjectRoot "translations\local_file_converter_hr.qm"
@@ -130,7 +130,7 @@ if (-not (Test-Path $TranslationsScript)) { Stop-Build "scripts\build_translatio
 if (-not (Test-Path $VerifyBuildScript)) { Stop-Build "scripts\verify_build.py is missing." }
 if (-not (Test-Path $VersionScript)) { Stop-Build "scripts\generate_installer_version.py is missing." }
 if (-not (Test-Path $VerifyInstallerScript)) { Stop-Build "scripts\verify_installer.py is missing." }
-if (-not (Test-Path $InstallerScript)) { Stop-Build "packaging\LocalFileConverter.iss is missing." }
+if (-not (Test-Path $InstallerScript)) { Stop-Build "packaging\MyFileConverter.iss is missing." }
 
 . $BuildHelpers
 
@@ -160,7 +160,7 @@ if (-not (Test-Path $OnedirExe)) {
     Stop-Build "$OnedirExe is missing. Run without -SkipAppBuild or create a release ONEDIR build."
 }
 
-& $PythonExe $VerifyBuildScript --bundle $OnedirBundle --name "LocalFileConverter"
+& $PythonExe $VerifyBuildScript --bundle $OnedirBundle --name "MyFileConverter"
 if ($LASTEXITCODE -ne 0) { Stop-Build "verify_build.py failed." }
 
 $BundleIconCandidates = @(
@@ -187,7 +187,7 @@ if ($LASTEXITCODE -ne 0) { Stop-Build "Inno Setup compilation failed." }
 
 $VersionLine = Select-String -Path (Join-Path $ProjectRoot "packaging\generated_version.iss") -Pattern 'AppVersion "([^"]+)"'
 $AppVersion = $VersionLine.Matches[0].Groups[1].Value
-$SetupExe = Join-Path $InstallerOutput "LocalFileConverter_Setup_${AppVersion}_x64.exe"
+$SetupExe = Join-Path $InstallerOutput "MyFileConverter_Setup_${AppVersion}_x64.exe"
 
 if (-not (Test-Path $SetupExe)) { Stop-Build "The expected installer was not found: $SetupExe" }
 

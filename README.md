@@ -1,9 +1,9 @@
-Local File Converter
-====================
+MyFile Converter
+================
 
 Version: 0.5.0
 
-Local File Converter is a Windows desktop application built with Python and
+MyFile Converter is a Windows desktop application built with Python and
 PySide6. File processing happens locally on the computer; documents are not
 sent to an internet service.
 
@@ -15,7 +15,7 @@ removes only its own incomplete temporary results.
 License
 -------
 
-Local File Converter's original project code is licensed under the GNU Affero
+MyFile Converter's original project code is licensed under the GNU Affero
 General Public License version 3 only. The full license text is in `LICENSE`.
 
 Source Code
@@ -44,12 +44,12 @@ included PyMuPDF notice is in `licenses\PyMuPDF-COPYING`.
 
 LibreOffice is optional and downloaded separately by the installer only if the
 user chooses that option and LibreOffice is not already detected. LibreOffice
-is not bundled in Local File Converter Setup.exe.
+is not bundled in MyFile Converter Setup.exe.
 
 No Warranty
 -----------
 
-Local File Converter is distributed without warranty, to the extent permitted
+MyFile Converter is distributed without warranty, to the extent permitted
 by applicable law. See `LICENSE` for the complete warranty disclaimer.
 
 Supported Conversions
@@ -89,6 +89,9 @@ The app writes a local technical log for error diagnostics:
 If `%LOCALAPPDATA%` is not available, it falls back to the user's home folder:
 
 `%USERPROFILE%\AppData\Local\LocalFileConverter\logs`
+
+The internal log/settings identity intentionally remains `LocalFileConverter`
+for compatibility with existing pre-release settings.
 
 The log rotates at 2 MB and keeps up to 5 backup files. It does not contain
 document contents, image contents, OCR text, or passwords. The log folder can be
@@ -167,13 +170,13 @@ Release ONEDIR build without a console:
 The final EXE is here:
 
 ```text
-dist\LocalFileConverter\LocalFileConverter.exe
+dist\MyFileConverter\MyFileConverter.exe
 ```
 
 For another computer, copy the entire folder:
 
 ```text
-dist\LocalFileConverter\
+dist\MyFileConverter\
 ```
 
 Do not copy only `.exe`; the ONEDIR build needs `_internal`, PySide6 DLLs, Qt
@@ -196,7 +199,7 @@ Windows Installer
 The installer is built with Inno Setup and uses the stable ONEDIR build from:
 
 ```text
-dist\LocalFileConverter\
+dist\MyFileConverter\
 ```
 
 Install Inno Setup 6 from the official website, then run:
@@ -214,13 +217,13 @@ If the ONEDIR build is already fresh, the app build can be skipped:
 The final Setup EXE is here:
 
 ```text
-installer_output\LocalFileConverter_Setup_0.5.0_x64.exe
+installer_output\MyFileConverter_Setup_0.5.0_x64.exe
 ```
 
 The installer is per-user and installs the app into:
 
 ```text
-%LOCALAPPDATA%\Programs\LocalFileConverter
+%LOCALAPPDATA%\Programs\MyFileConverter
 ```
 
 Microsoft Office is not included in the installer. Optional LibreOffice download

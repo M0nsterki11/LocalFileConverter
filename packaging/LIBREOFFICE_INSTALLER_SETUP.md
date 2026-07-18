@@ -1,7 +1,7 @@
 # LibreOffice Installer Setup
 
 LibreOffice download/install is enabled as an optional online step in phase 11B.
-The Local File Converter setup remains a small online installer and does not
+The MyFile Converter setup remains a small online installer and does not
 embed the LibreOffice MSI.
 
 The configuration file is:
@@ -39,11 +39,11 @@ Installer behavior:
 1. Detect whether LibreOffice is already installed.
 2. If it exists, do not offer installation.
 3. If it does not exist, show an unchecked optional download checkbox.
-4. The user may decline and still finish LocalFileConverter installation.
+4. The user may decline and still finish MyFile Converter installation.
 5. Download only from the official pinned URL.
 6. Verify SHA-256 before running anything.
 7. If the hash is wrong, do not run the downloaded file.
-8. Internet failure must not break LocalFileConverter installation.
+8. Internet failure must not break MyFile Converter installation.
 9. Do not modify Microsoft Office.
 10. After installation, detect `soffice.exe` again.
 11. If detection fails, explain that the path can be selected manually in the app.

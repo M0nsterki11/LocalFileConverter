@@ -1,10 +1,10 @@
-Local File Converter Source Code
-================================
+MyFile Converter Source Code
+============================
 
-Local File Converter Setup.exe contains object code produced from the Local
-File Converter source tree.
+MyFile Converter Setup.exe contains object code produced from the MyFile
+Converter source tree.
 
-The corresponding Local File Converter source code is available from the
+The corresponding MyFile Converter source code is available from the
 public repository:
 
 https://github.com/M0nsterki11/LocalFileConverter
@@ -18,7 +18,7 @@ The v0.5.0 tag was not present when this notice was prepared. It must be created
 
 The repository includes the build scripts, packaging configuration, dependency
 declarations, translation files, and application source needed to rebuild the
-Local File Converter release from source.
+MyFile Converter release from source.
 
 PyMuPDF and MuPDF are separate upstream projects. PyMuPDF upstream source and
 license information can be found through the official project links and the

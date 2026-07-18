@@ -15,12 +15,12 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [
-          StringStruct('CompanyName', 'LocalFileConverter'),
-          StringStruct('FileDescription', 'Local File Converter'),
+          StringStruct('CompanyName', 'MyFile Converter'),
+          StringStruct('FileDescription', 'MyFile Converter'),
           StringStruct('FileVersion', '0.5.0'),
-          StringStruct('InternalName', 'LocalFileConverter'),
-          StringStruct('OriginalFilename', 'LocalFileConverter.exe'),
-          StringStruct('ProductName', 'Local File Converter'),
+          StringStruct('InternalName', 'MyFileConverter'),
+          StringStruct('OriginalFilename', 'MyFileConverter.exe'),
+          StringStruct('ProductName', 'MyFile Converter'),
           StringStruct('ProductVersion', '0.5.0'),
           StringStruct('LegalCopyright', 'Copyright 2026')
         ]

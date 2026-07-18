@@ -4,7 +4,13 @@ import importlib.metadata as metadata
 from pathlib import Path
 from urllib.parse import urlparse
 
-from app.constants import APP_VERSION, GITHUB_REPOSITORY_URL
+from app.constants import (
+    APP_NAME,
+    APP_ORGANIZATION,
+    APP_SETTINGS_APPLICATION_NAME,
+    APP_VERSION,
+    GITHUB_REPOSITORY_URL,
+)
 from app.dialogs.about_dialog import AboutDialog
 
 
@@ -26,7 +32,7 @@ def test_project_license_and_notice_are_agpl_v3_only() -> None:
     assert "GNU AFFERO GENERAL PUBLIC LICENSE" in license_text
     assert "Version 3, 19 November 2007" in license_text
     assert (
-        "Local File Converter's original project code is licensed under the "
+        "MyFile Converter's original project code is licensed under the "
         "GNU\nAffero General Public License version 3 only."
     ) in notice_text
     assert "or any later version" not in notice_text
@@ -75,11 +81,11 @@ def test_source_code_notice_uses_public_https_repository_and_release_tag() -> No
 
 
 def test_packaging_includes_required_notice_files() -> None:
-    spec_text = (PROJECT_ROOT / "LocalFileConverter.spec").read_text(
+    spec_text = (PROJECT_ROOT / "MyFileConverter.spec").read_text(
         encoding="utf-8"
     )
     installer_text = (
-        PROJECT_ROOT / "packaging" / "LocalFileConverter.iss"
+        PROJECT_ROOT / "packaging" / "MyFileConverter.iss"
     ).read_text(encoding="utf-8")
     verify_build_text = (
         PROJECT_ROOT / "scripts" / "verify_build.py"
@@ -118,11 +124,19 @@ def test_about_dialog_exposes_license_notices_source_and_no_warranty(qapp) -> No
 
 def test_app_version_and_installer_app_id_remain_unchanged() -> None:
     installer_text = (
-        PROJECT_ROOT / "packaging" / "LocalFileConverter.iss"
+        PROJECT_ROOT / "packaging" / "MyFileConverter.iss"
     ).read_text(encoding="utf-8")
 
     assert APP_VERSION == "0.5.0"
     assert APP_ID_GUID in installer_text
+    assert "DefaultDirName={localappdata}\\Programs\\MyFileConverter" in installer_text
+    assert "MyFile Converter" in installer_text
+
+
+def test_visible_name_changed_but_qsettings_identity_is_preserved() -> None:
+    assert APP_NAME == "MyFile Converter"
+    assert APP_ORGANIZATION == "LocalFileConverter"
+    assert APP_SETTINGS_APPLICATION_NAME == "Local File Converter"
 
 
 def _section_text(text: str, start: str, end: str) -> str:

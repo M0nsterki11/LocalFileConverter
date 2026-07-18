@@ -21,11 +21,11 @@ def read_app_version() -> str:
 
 def main() -> int:
     version = read_app_version()
-    setup_base_name = f"LocalFileConverter_Setup_{version}_x64"
+    setup_base_name = f"MyFileConverter_Setup_{version}_x64"
     content = f"""#define AppVersion \"{version}\"
-#define AppName \"Local File Converter\"
-#define AppPublisher \"LocalFileConverter\"
-#define AppExeName \"LocalFileConverter.exe\"
+#define AppName \"MyFile Converter\"
+#define AppPublisher \"MyFile Converter\"
+#define AppExeName \"MyFileConverter.exe\"
 #define AppSetupBaseName \"{setup_base_name}\"
 """
     OUTPUT_FILE.write_text(content, encoding="utf-8")

@@ -28,7 +28,7 @@ installer_output/
 build/
 dist/
 *.spec
-!LocalFileConverter.spec
+!MyFileConverter.spec
 
 # Test cache
 .pytest_cache/
