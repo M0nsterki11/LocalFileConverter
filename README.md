@@ -3,20 +3,27 @@ MyFile Converter
 
 Version: 0.5.1
 
-MyFile Converter is a Windows desktop application built with Python and
-PySide6. File processing happens locally on the computer; documents are not
-sent to an internet service.
+MyFile Converter is a Windows simple desktop app built with Python and
+PySide6. Everything is done locally on the PC; documents are not
+sent to the internet.
 
 Original files are not modified. Results are first written as temporary `.part`
 files or temporary folders, and the final name is published only after a
 successful conversion. If conversion fails or the user cancels it, the app
 removes only its own incomplete temporary results.
 
-Source-Code
------------
+Supported Conversions
+---------------------
 
-The installed `SOURCE_CODE.md` file tells users where to obtain the
-corresponding source and which tag applies to the installed version.
+- JPG, PNG, and WEBP image conversions
+- Images to PDF
+- PDF pages to JPG or PNG
+- All PDF pages or selected page ranges
+- Multiple PDF pages as a folder or ZIP archive
+- Automatic ZIP output when rendered PDF pages exceed 100 MB
+- DOCX, PPTX, and XLSX to PDF through a local Office tool
+- Batch conversion with per-file status and progress
+- Multiple images merged into one PDF
 
 Third-Party Software
 --------------------
@@ -33,19 +40,6 @@ included PyMuPDF notice is in `licenses\PyMuPDF-COPYING`.
 LibreOffice is optional and downloaded separately by the installer only if the
 user chooses that option and LibreOffice is not already detected. LibreOffice
 is not bundled in MyFile Converter Setup.exe.
-
-Supported Conversions
----------------------
-
-- JPG, PNG, and WEBP image conversions
-- Images to PDF
-- PDF pages to JPG or PNG
-- All PDF pages or selected page ranges
-- Multiple PDF pages as a folder or ZIP archive
-- Automatic ZIP output when rendered PDF pages exceed 100 MB
-- DOCX, PPTX, and XLSX to PDF through a local Office tool
-- Batch conversion with per-file status and progress
-- Multiple images merged into one PDF
 
 Office Conversion
 -----------------
@@ -122,14 +116,8 @@ translations\local_file_converter_hr.qm
 Building the Windows Executable
 -------------------------------
 
-The primary release format is PyInstaller ONEDIR. Distribute the whole folder
-from `dist`, not only the executable.
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-```
+After completing the development setup above, build the application with
+PyInstaller.
 
 Debug ONEDIR build with a console:
 
@@ -155,14 +143,17 @@ For another computer, copy the entire folder:
 dist\MyFileConverter\
 ```
 
-Do not copy only `.exe`; the ONEDIR build needs `_internal`, PySide6 DLLs, Qt
-plugins, runtime resources, and translations.
+Do not copy only the `.exe`; the ONEDIR build also requires `_internal`,
+PySide6 DLLs, Qt plugins, runtime resources, and translations.
 
-Experimental ONEFILE build:
+Optional ONEFILE build:
 
 ```powershell
 .\scripts\build_onefile.ps1
 ```
+
+The official Windows release uses the ONEDIR build packaged through the
+Windows installer.
 
 Windows Installer
 -----------------
@@ -202,9 +193,9 @@ is controlled by `packaging\libreoffice_dependency.json`, which must keep the
 pinned version, official URL, expected size, and SHA-256. LibreOffice is offered
 as an optional fallback and is never installed automatically.
 
-The current installer is not digitally signed. Windows SmartScreen may show
-Unknown publisher. `installer_output/` is not committed; Setup EXE files are
-published later as GitHub Release assets.
+The current installer is not digitally signed it may show Unknown publisher. 
+`installer_output/` is not committed to the repository. 
+Setup EXE files are published as GitHub Release assets.
 
 License
 -------
