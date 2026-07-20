@@ -12,23 +12,11 @@ files or temporary folders, and the final name is published only after a
 successful conversion. If conversion fails or the user cancels it, the app
 removes only its own incomplete temporary results.
 
-License
--------
-
-MyFile Converter's original project code is licensed under the GNU Affero
-General Public License version 3 only. The full license text is in `LICENSE`.
-
-Source Code
+Source-Code
 -----------
 
-The public source repository is:
-
-```text
-https://github.com/M0nsterki11/LocalFileConverter
-```
-
-Source code for released binaries is available from the corresponding Git tag
-in that repository. Release `0.5.1` must correspond to tag `v0.5.1`.
+The installed `SOURCE_CODE.md` file tells users where to obtain the
+corresponding source and which tag applies to the installed version.
 
 Third-Party Software
 --------------------
@@ -45,12 +33,6 @@ included PyMuPDF notice is in `licenses\PyMuPDF-COPYING`.
 LibreOffice is optional and downloaded separately by the installer only if the
 user chooses that option and LibreOffice is not already detected. LibreOffice
 is not bundled in MyFile Converter Setup.exe.
-
-No Warranty
------------
-
-MyFile Converter is distributed without warranty, to the extent permitted
-by applicable law. See `LICENSE` for the complete warranty disclaimer.
 
 Supported Conversions
 ---------------------
@@ -75,13 +57,6 @@ so the three applications do not all need to be installed. If the matching app
 is unavailable or its conversion fails, LibreOffice is used as a fallback
 through an automatically detected or manually selected `soffice.exe` path.
 
-Localization
-------------
-
-English is the default source and UI language. The app does not automatically
-switch based on the Windows display language. Users can choose English or
-Croatian in Settings, and the change is applied at runtime without restarting.
-
 Logs and Errors
 ---------------
 
@@ -96,9 +71,7 @@ If `%LOCALAPPDATA%` is not available, it falls back to the user's home folder:
 The internal log/settings identity intentionally remains `LocalFileConverter`
 for compatibility with existing pre-release settings.
 
-The log rotates at 2 MB and keeps up to 5 backup files. It does not contain
-document contents, image contents, OCR text, or passwords. The log folder can be
-opened from Settings or About.
+The log rotates at 2 MB and keeps up to 5 backup files.
 
 When an error occurs, the user sees a short message and technical details are
 saved to the log. One failed item in a batch conversion does not stop later
@@ -189,12 +162,6 @@ Experimental ONEFILE build:
 
 ```powershell
 .\scripts\build_onefile.ps1
-```
-
-ONEFILE is not the recommended release format until stability is confirmed.
-Microsoft Office and LibreOffice are not embedded in the app build; the app
-uses local installations when available. The build is not digitally signed yet,
-so Windows SmartScreen may show a warning.
 
 Windows Installer
 -----------------
@@ -238,15 +205,11 @@ The current installer is not digitally signed. Windows SmartScreen may show
 Unknown publisher. `installer_output/` is not committed; Setup EXE files are
 published later as GitHub Release assets.
 
-Release Source Correspondence
------------------------------
+License
+-------
 
-Release binaries must correspond to a Git tag. For version `0.5.1`, publish the
-installer only after tag `v0.5.1` exists in the public repository and points to
-the exact source state used to build the ONEDIR application and Setup EXE.
+MyFile Converter's original project code is licensed under the GNU Affero
+General Public License version 3 only. The full license text is in `LICENSE`.
 
-The installed `SOURCE_CODE.md` file tells users where to obtain the
-corresponding source and which tag applies to the installed version.
-
-App Screenshot (not added yet)
-----------
+The corresponding source code for each released binary is available from
+the matching Git tag in this repository.
