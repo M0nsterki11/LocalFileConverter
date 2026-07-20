@@ -3,7 +3,7 @@ MyFile Converter
 
 Version: 0.5.1
 
-MyFile Converter is a Windows simple desktop app built with Python and
+MyFile Converter is a simple Windows desktop app built with Python and
 PySide6. Everything is done locally on the PC; documents are not
 sent to the internet.
 
