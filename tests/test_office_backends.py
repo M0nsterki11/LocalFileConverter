@@ -6,10 +6,10 @@ from types import ModuleType
 
 import pytest
 
-import app.conversion_execution as conversion_execution
+import app.conversion_runner as conversion_runner
 import converters.microsoft_office_converter as microsoft_converter
 from app.exceptions import DependencyNotFoundError
-from app.conversion_execution import run_conversion
+from app.conversion_runner import run_conversion
 from utils.error_handler import exception_to_error_info
 
 
@@ -42,7 +42,7 @@ def test_matching_microsoft_office_app_is_selected_without_libreoffice(
     calls: list[str] = []
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "is_microsoft_office_available",
         lambda candidate: candidate == extension,
     )
@@ -56,12 +56,12 @@ def test_matching_microsoft_office_app_is_selected_without_libreoffice(
         return _write_result(kwargs["output_directory"], "result.pdf")
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_with_microsoft_office",
         fake_microsoft_conversion,
     )
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_office_to_pdf",
         lambda **_kwargs: pytest.fail("LibreOffice should not be selected"),
     )
@@ -81,7 +81,7 @@ def test_libreoffice_is_selected_when_microsoft_office_is_unavailable(
     calls: list[str] = []
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "is_microsoft_office_available",
         lambda _extension: False,
     )
@@ -91,7 +91,7 @@ def test_libreoffice_is_selected_when_microsoft_office_is_unavailable(
         return _write_result(kwargs["output_directory"], "fallback.pdf")
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_office_to_pdf",
         fake_libreoffice_conversion,
     )
@@ -115,12 +115,12 @@ def test_microsoft_office_is_preferred_when_both_backends_are_available(
     soffice_path = _write_input(tmp_path / "soffice.exe")
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "is_microsoft_office_available",
         lambda _extension: True,
     )
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_with_microsoft_office",
         lambda **kwargs: _write_result(
             kwargs["output_directory"],
@@ -128,7 +128,7 @@ def test_microsoft_office_is_preferred_when_both_backends_are_available(
         ),
     )
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_office_to_pdf",
         lambda **_kwargs: pytest.fail("LibreOffice should not be preferred"),
     )
@@ -153,7 +153,7 @@ def test_libreoffice_fallback_runs_after_microsoft_office_failure(
     statuses: list[str] = []
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "is_microsoft_office_available",
         lambda _extension: True,
     )
@@ -167,12 +167,12 @@ def test_libreoffice_fallback_runs_after_microsoft_office_failure(
         return _write_result(kwargs["output_directory"], "fallback.pdf")
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_with_microsoft_office",
         fail_microsoft_conversion,
     )
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_office_to_pdf",
         fake_libreoffice_conversion,
     )
@@ -196,7 +196,7 @@ def test_neither_backend_available_returns_clear_dependency_error(
 ) -> None:
     input_path = _write_input(tmp_path / "input.docx")
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "is_microsoft_office_available",
         lambda _extension: False,
     )
@@ -294,12 +294,12 @@ def test_image_conversion_does_not_probe_office_backends(
     input_path = _write_input(tmp_path / "input.jpg")
 
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "is_microsoft_office_available",
         lambda _extension: pytest.fail("Office detection should not run"),
     )
     monkeypatch.setattr(
-        conversion_execution,
+        conversion_runner,
         "convert_image",
         lambda **kwargs: _write_result(
             kwargs["output_directory"],

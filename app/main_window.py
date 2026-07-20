@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.batch_worker import BatchConversionWorker
+from app.batch_conversion_worker import BatchConversionWorker
 from app.constants import (
     APP_NAME,
     FILE_DIALOG_FILTER,

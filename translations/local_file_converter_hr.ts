@@ -625,12 +625,12 @@ Copyright {year}</translation>
     <message><source>The conversion was cancelled by the user.</source><translation>Konverziju je prekinuo korisnik.</translation></message>
 </context>
 <context>
-    <name>BatchWorker</name>
+    <name>BatchConversionWorker</name>
     <message><source>The conversion was cancelled by the user.</source><translation>Konverziju je prekinuo korisnik.</translation></message>
     <message><source>Batch conversion was cancelled before this item started.</source><translation>Grupna konverzija je prekinuta prije pokretanja ove stavke.</translation></message>
 </context>
 <context>
-    <name>ConversionExecution</name>
+    <name>ConversionRunner</name>
     <message><source>Office documents can currently only be converted to PDF.</source><translation>Office dokumenti trenutačno se mogu pretvoriti samo u PDF.</translation></message>
     <message><source>The selected format is not supported for conversion yet.</source><translation>Odabrani format još nije podržan za konverziju.</translation></message>
     <message><source>Microsoft Office conversion failed. Trying LibreOffice...</source><translation>Microsoft Office konverzija nije uspjela. Pokušaj pomoću LibreOfficea...</translation></message>

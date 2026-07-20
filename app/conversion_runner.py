@@ -402,4 +402,4 @@ def _log_success(
 
 
 def _tr(source_text: str) -> str:
-    return translate("ConversionExecution", source_text)
+    return translate("ConversionRunner", source_text)

@@ -4,7 +4,7 @@ import pytest
 import pymupdf
 from PIL import Image
 
-from app.batch_worker import BatchConversionWorker
+from app.batch_conversion_worker import BatchConversionWorker
 from app.conversion_item import (
     ConversionItem,
     ConversionStatus,
@@ -94,7 +94,7 @@ def test_conversion_item_status_reset_for_rerun(
     assert item.output_directory == tmp_path / "new"
 
 
-def test_batch_worker_continues_after_item_failure(
+def test_batch_conversion_worker_continues_after_item_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -122,7 +122,7 @@ def test_batch_worker_continues_after_item_failure(
         return result_path
 
     monkeypatch.setattr(
-        "app.batch_worker.run_conversion",
+        "app.batch_conversion_worker.run_conversion",
         fake_run_conversion,
     )
 

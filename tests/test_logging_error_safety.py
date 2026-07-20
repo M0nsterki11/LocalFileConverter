@@ -10,7 +10,7 @@ import pytest
 import pymupdf
 from PIL import Image
 
-from app.batch_worker import BatchConversionWorker
+from app.batch_conversion_worker import BatchConversionWorker
 from app.conversion_item import ConversionItem, ConversionStatus
 from app.exceptions import (
     CorruptedFileError,
@@ -267,7 +267,7 @@ def test_batch_failure_logs_traceback_and_continues(
         return result_path
 
     monkeypatch.setattr(
-        "app.batch_worker.run_conversion",
+        "app.batch_conversion_worker.run_conversion",
         fake_run_conversion,
     )
 

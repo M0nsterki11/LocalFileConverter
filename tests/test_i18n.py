@@ -108,13 +108,13 @@ def test_office_dependency_messages_are_translated() -> None:
     try:
         assert manager.set_language("hr") == "hr"
         assert translate(
-            "ConversionExecution",
+            "ConversionRunner",
             "Microsoft Office or LibreOffice is required for this conversion.",
         ) == (
             "Za ovu konverziju potreban je Microsoft Office ili LibreOffice."
         )
         assert translate(
-            "ConversionExecution",
+            "ConversionRunner",
             "Microsoft Office conversion failed. Trying LibreOffice...",
         ) == (
             "Microsoft Office konverzija nije uspjela. "

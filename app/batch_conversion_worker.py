@@ -6,7 +6,7 @@ from threading import Event
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from app.conversion_execution import run_conversion
+from app.conversion_runner import run_conversion
 from app.conversion_item import (
     ConversionItem,
     ConversionStatus,
@@ -245,4 +245,4 @@ class BatchConversionWorker(QObject):
 
 
 def _tr(source_text: str) -> str:
-    return translate("BatchWorker", source_text)
+    return translate("BatchConversionWorker", source_text)
