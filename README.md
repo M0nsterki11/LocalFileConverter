@@ -162,6 +162,7 @@ Experimental ONEFILE build:
 
 ```powershell
 .\scripts\build_onefile.ps1
+```
 
 Windows Installer
 -----------------
