@@ -267,7 +267,7 @@ begin
         Log('LibreOffice download cancelled by user.');
         SuppressibleMsgBox(
           'LibreOffice download was cancelled. MyFile Converter will still be installed.'#13#13 +
-          'DOCX, PPTX and XLSX to PDF conversion will require LibreOffice later.',
+          'Office conversions can use Microsoft Office desktop applications. LibreOffice can be installed later as a fallback.',
           mbInformation,
           MB_OK,
           IDOK
@@ -368,7 +368,7 @@ begin
     Log('LibreOffice MSI was cancelled by user.');
     SuppressibleMsgBox(
       'LibreOffice installation was cancelled. MyFile Converter will still be installed.'#13#13 +
-      'Office conversions will require LibreOffice later.',
+      'Office conversions can use Microsoft Office desktop applications. LibreOffice can be installed later as a fallback.',
       mbInformation,
       MB_OK,
       IDOK
@@ -428,8 +428,8 @@ begin
   LibreOfficePage := CreateInputOptionPage(
     wpSelectDir,
     'Optional LibreOffice support',
-    'Install LibreOffice for Office conversions?',
-    'LibreOffice is required only for DOCX, PPTX and XLSX to PDF conversion. Other conversions work without it.',
+    'Install LibreOffice as an Office conversion fallback?',
+    'Microsoft Office desktop applications are used when available. LibreOffice remains an optional fallback for DOCX, PPTX and XLSX to PDF conversion.',
     False,
     False
   );

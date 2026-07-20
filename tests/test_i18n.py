@@ -102,6 +102,28 @@ def test_missing_translation_falls_back_to_english(
     assert "using English" in caplog.text
 
 
+def test_office_dependency_messages_are_translated() -> None:
+    manager = get_translation_manager()
+
+    try:
+        assert manager.set_language("hr") == "hr"
+        assert translate(
+            "ConversionExecution",
+            "Microsoft Office or LibreOffice is required for this conversion.",
+        ) == (
+            "Za ovu konverziju potreban je Microsoft Office ili LibreOffice."
+        )
+        assert translate(
+            "ConversionExecution",
+            "Microsoft Office conversion failed. Trying LibreOffice...",
+        ) == (
+            "Microsoft Office konverzija nije uspjela. "
+            "Pokušaj pomoću LibreOfficea..."
+        )
+    finally:
+        manager.set_language("en")
+
+
 def test_main_settings_and_about_runtime_language_switch(
     isolated_qsettings,
     qapp,

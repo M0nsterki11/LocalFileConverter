@@ -10,6 +10,7 @@ from app.conversion_execution import run_conversion
 from app.settings import (
     DEFAULT_IMAGE_QUALITY,
     DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+    DEFAULT_OFFICE_ENGINE,
     DEFAULT_PDF_DPI,
 )
 from converters.base_converter import (
@@ -43,6 +44,7 @@ class ConversionWorker(QObject):
         dpi: int = DEFAULT_PDF_DPI,
         page_selection: str | None = None,
         multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+        office_engine: str = DEFAULT_OFFICE_ENGINE,
         libreoffice_path: str | Path | None = None,
     ) -> None:
         super().__init__()
@@ -54,6 +56,7 @@ class ConversionWorker(QObject):
         self.dpi = dpi
         self.page_selection = page_selection
         self.multi_page_output_mode = multi_page_output_mode
+        self.office_engine = office_engine
 
         self.libreoffice_path = (
             Path(libreoffice_path)
@@ -86,6 +89,7 @@ class ConversionWorker(QObject):
                 dpi=self.dpi,
                 page_selection=self.page_selection,
                 multi_page_output_mode=self.multi_page_output_mode,
+                office_engine=self.office_engine,
                 libreoffice_path=self.libreoffice_path,
                 cancel_check=self.is_cancelled,
                 progress_callback=self.progress_changed.emit,

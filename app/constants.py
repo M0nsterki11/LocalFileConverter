@@ -1,5 +1,5 @@
 APP_NAME = "MyFile Converter"
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.5.1"
 APP_ORGANIZATION = "LocalFileConverter"
 APP_SETTINGS_APPLICATION_NAME = "Local File Converter"
 GITHUB_REPOSITORY_URL = (

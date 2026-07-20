@@ -64,6 +64,12 @@ def main() -> int:
     if not list(bundle_path.rglob("PySide6*.dll")):
         errors.append("PySide6 DLL files were not found.")
 
+    if not list(bundle_path.rglob("pythoncom*.dll")):
+        errors.append("pywin32 pythoncom DLL was not found.")
+
+    if not list(bundle_path.rglob("pywintypes*.dll")):
+        errors.append("pywin32 pywintypes DLL was not found.")
+
     _check_bundle_notice_files(bundle_path, errors)
 
     bundle_size = _directory_size(bundle_path)
@@ -150,8 +156,8 @@ def _check_legal_notice_files(errors: list[str]) -> None:
     if parsed_url.scheme != "https" or parsed_url.netloc != "github.com":
         errors.append("SOURCE_CODE.md must use a stable HTTPS GitHub URL.")
 
-    if "v0.5.0" not in source_text:
-        errors.append("SOURCE_CODE.md does not identify tag v0.5.0.")
+    if "v0.5.1" not in source_text:
+        errors.append("SOURCE_CODE.md does not identify tag v0.5.1.")
 
 
 def _check_bundle_notice_files(bundle_path: Path, errors: list[str]) -> None:

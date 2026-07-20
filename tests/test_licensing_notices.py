@@ -76,7 +76,7 @@ def test_source_code_notice_uses_public_https_repository_and_release_tag() -> No
     assert PUBLIC_REPOSITORY_URL in source_text
     assert parsed_url.scheme == "https"
     assert parsed_url.netloc == "github.com"
-    assert "v0.5.0" in source_text
+    assert "v0.5.1" in source_text
     assert "must be created and pushed before publishing the installer" in source_text
 
 
@@ -122,12 +122,12 @@ def test_about_dialog_exposes_license_notices_source_and_no_warranty(qapp) -> No
         dialog.close()
 
 
-def test_app_version_and_installer_app_id_remain_unchanged() -> None:
+def test_app_version_and_installer_app_id() -> None:
     installer_text = (
         PROJECT_ROOT / "packaging" / "MyFileConverter.iss"
     ).read_text(encoding="utf-8")
 
-    assert APP_VERSION == "0.5.0"
+    assert APP_VERSION == "0.5.1"
     assert APP_ID_GUID in installer_text
     assert "DefaultDirName={localappdata}\\Programs\\MyFileConverter" in installer_text
     assert "MyFile Converter" in installer_text

@@ -306,7 +306,10 @@ class SettingsDialog(QDialog):
         self.office_engine_combo.setItemText(0, self.tr("Automatic"))
         self.office_engine_combo.setItemText(1, "LibreOffice")
         self.office_engine_combo.setToolTip(
-            self.tr("Default engine for Office documents.")
+            self.tr(
+                "Automatic prefers the matching Microsoft Office desktop "
+                "application and uses LibreOffice as a fallback."
+            )
         )
 
         self.libreoffice_group.setTitle("LibreOffice")

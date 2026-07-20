@@ -112,8 +112,8 @@
         <translation>Promijeni mapu</translation>
     </message>
     <message>
-        <source>LibreOffice for Office to PDF</source>
-        <translation>LibreOffice za Office u PDF</translation>
+        <source>Office conversion</source>
+        <translation>Office konverzija</translation>
     </message>
     <message>
         <source>Program:</source>
@@ -128,8 +128,8 @@
         <translation>Odaberi soffice.exe</translation>
     </message>
     <message>
-        <source>LibreOffice is required for DOCX, PPTX, and XLSX conversions. The path is saved for the next launch.</source>
-        <translation>LibreOffice je potreban za DOCX, PPTX i XLSX konverzije. Putanja se sprema za sljedeće pokretanje.</translation>
+        <source>Office documents can be converted using Microsoft Office or LibreOffice. The LibreOffice path is saved for fallback use.</source>
+        <translation>Office dokumenti mogu se pretvoriti pomoću Microsoft Officea ili LibreOfficea. Putanja za LibreOffice sprema se za korištenje kao zamjenski alat.</translation>
     </message>
     <message>
         <source>CONVERT ALL</source>
@@ -412,7 +412,7 @@ C:\Program Files\LibreOffice\program\soffice.exe</translation>
     <message><source>Office engine</source><translation>Office alat</translation></message>
     <message><source>Default engine:</source><translation>Zadani alat:</translation></message>
     <message><source>Automatic</source><translation>Automatski</translation></message>
-    <message><source>Default engine for Office documents.</source><translation>Zadani alat za Office dokumente.</translation></message>
+    <message><source>Automatic prefers the matching Microsoft Office desktop application and uses LibreOffice as a fallback.</source><translation>Automatski način daje prednost odgovarajućoj Microsoft Office aplikaciji za računalo i koristi LibreOffice kao zamjenski alat.</translation></message>
     <message><source>Current path:</source><translation>Trenutna putanja:</translation></message>
     <message><source>Path to soffice.exe for LibreOffice conversions.</source><translation>Putanja do soffice.exe za LibreOffice konverzije.</translation></message>
     <message><source>Detect automatically</source><translation>Pronađi automatski</translation></message>
@@ -440,7 +440,7 @@ C:\Program Files\LibreOffice\program\soffice.exe</translation>
 
 It supports image conversions, PDF conversions, Office documents to PDF, and merging multiple images into one PDF.
 
-The application is built with Python and PySide6. LibreOffice is used as an external tool when selected or required for Office conversion.
+The application is built with Python and PySide6. Microsoft Office or LibreOffice can be used as an external tool for Office conversion.
 
 The application stores a local technical log for errors. The log does not contain document contents, and you can open or delete it from your user folder.
 
@@ -451,7 +451,7 @@ Copyright {year}</source>
 
 Podržava konverzije slika, PDF konverzije, Office dokumente u PDF i spajanje više slika u jedan PDF.
 
-Aplikacija je izrađena u Pythonu i PySide6. LibreOffice se koristi kao vanjski alat kada je odabran ili potreban za Office konverziju.
+Aplikacija je izrađena u Pythonu i PySide6. Microsoft Office ili LibreOffice mogu se koristiti kao vanjski alat za Office konverziju.
 
 Aplikacija sprema lokalni tehnički log za greške. Log ne sadrži sadržaj dokumenata i možete ga otvoriti ili obrisati iz korisničke mape.
 
@@ -575,9 +575,9 @@ Copyright {year}</translation>
     <message><source>File is not valid</source><translation>Datoteka nije valjana</translation></message>
     <message><source>The PDF cannot be opened or is corrupted.</source><translation>PDF se ne može otvoriti ili je oštećen.</translation></message>
     <message><source>Check the file in the original program and try again.</source><translation>Provjerite datoteku u izvornom programu i pokušajte ponovno.</translation></message>
-    <message><source>LibreOffice was not found</source><translation>LibreOffice nije pronađen</translation></message>
-    <message><source>LibreOffice was not found. Install it or choose soffice.exe.</source><translation>LibreOffice nije pronađen. Instalirajte ga ili odaberite soffice.exe.</translation></message>
-    <message><source>Choose the correct path to soffice.exe in Settings.</source><translation>U Postavkama odaberite ispravnu putanju do soffice.exe.</translation></message>
+    <message><source>Office conversion tool was not found</source><translation>Alat za Office konverziju nije pronađen</translation></message>
+    <message><source>Microsoft Office or LibreOffice is required for this conversion.</source><translation>Za ovu konverziju potreban je Microsoft Office ili LibreOffice.</translation></message>
+    <message><source>Install the matching Microsoft Office desktop application or choose soffice.exe in Settings.</source><translation>Instalirajte odgovarajuću Microsoft Office aplikaciju za računalo ili u Postavkama odaberite soffice.exe.</translation></message>
     <message><source>Output folder problem</source><translation>Problem s izlaznom mapom</translation></message>
     <message><source>The output folder is not available for saving results.</source><translation>Izlazna mapa nije dostupna za spremanje rezultata.</translation></message>
     <message><source>Choose another output folder or check permissions.</source><translation>Odaberite drugu izlaznu mapu ili provjerite dozvole.</translation></message>
@@ -632,8 +632,12 @@ Copyright {year}</translation>
 <context>
     <name>ConversionExecution</name>
     <message><source>Office documents can currently only be converted to PDF.</source><translation>Office dokumenti trenutačno se mogu pretvoriti samo u PDF.</translation></message>
-    <message><source>LibreOffice path is not configured.</source><translation>LibreOffice putanja nije postavljena.</translation></message>
     <message><source>The selected format is not supported for conversion yet.</source><translation>Odabrani format još nije podržan za konverziju.</translation></message>
+    <message><source>Microsoft Office conversion failed. Trying LibreOffice...</source><translation>Microsoft Office konverzija nije uspjela. Pokušaj pomoću LibreOfficea...</translation></message>
+    <message><source>{app_name} could not complete the conversion, and LibreOffice is not available as a fallback.</source><translation>{app_name} nije uspio dovršiti konverziju, a LibreOffice nije dostupan kao zamjenski alat.</translation></message>
+    <message><source>Open the document in its Microsoft Office application to check it, or install LibreOffice and choose soffice.exe in Settings.</source><translation>Otvorite dokument u njegovoj Microsoft Office aplikaciji radi provjere ili instalirajte LibreOffice i u Postavkama odaberite soffice.exe.</translation></message>
+    <message><source>Microsoft Office or LibreOffice is required for this conversion.</source><translation>Za ovu konverziju potreban je Microsoft Office ili LibreOffice.</translation></message>
+    <message><source>Install the matching Microsoft Office desktop application or install LibreOffice and choose soffice.exe in Settings.</source><translation>Instalirajte odgovarajuću Microsoft Office aplikaciju za računalo ili instalirajte LibreOffice i u Postavkama odaberite soffice.exe.</translation></message>
 </context>
 <context>
     <name>ImageConverter</name>
@@ -689,6 +693,18 @@ Copyright {year}</translation>
     <message><source>Could not create the ZIP archive: {error}</source><translation>Nije moguće napraviti ZIP arhivu: {error}</translation></message>
     <message><source>Unsupported output format: {format_name}</source><translation>Nepodržani izlazni format: {format_name}</translation></message>
     <message><source>Page {page_number} does not exist. The PDF has {page_count} pages.</source><translation>Stranica {page_number} ne postoji. PDF ima {page_count} stranica.</translation></message>
+</context>
+<context>
+    <name>MicrosoftOfficeConverter</name>
+    <message><source>Only DOCX, PPTX, and XLSX documents are supported.</source><translation>Podržani su samo DOCX, PPTX i XLSX dokumenti.</translation></message>
+    <message><source>Preparing {app_name} conversion...</source><translation>Priprema konverzije pomoću aplikacije {app_name}...</translation></message>
+    <message><source>Converting file {file_name} with {app_name}...</source><translation>Pretvaranje datoteke {file_name} pomoću aplikacije {app_name}...</translation></message>
+    <message><source>{app_name} could not convert the document.</source><translation>{app_name} nije uspio pretvoriti dokument.</translation></message>
+    <message><source>Open the document in its Office application to check it, or use LibreOffice as a fallback.</source><translation>Otvorite dokument u njegovoj Office aplikaciji radi provjere ili koristite LibreOffice kao zamjenski alat.</translation></message>
+    <message><source>{app_name} did not create a PDF result.</source><translation>{app_name} nije stvorio PDF rezultat.</translation></message>
+    <message><source>Saving file {file_name}...</source><translation>Spremanje datoteke {file_name}...</translation></message>
+    <message><source>The Office document was converted to PDF successfully.</source><translation>Office dokument uspješno je pretvoren u PDF.</translation></message>
+    <message><source>Microsoft Office automation is not available in this build.</source><translation>Automatizacija Microsoft Officea nije dostupna u ovoj verziji aplikacije.</translation></message>
 </context>
 <context>
     <name>OfficeConverter</name>

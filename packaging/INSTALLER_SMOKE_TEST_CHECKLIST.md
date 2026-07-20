@@ -36,7 +36,7 @@
 
 - Installer shows an optional checkbox:
   `Download and install LibreOffice 26.2.4 (approximately 355 MB)`.
-- Installer explains that LibreOffice is only required for DOCX, PPTX and XLSX to PDF conversion.
+- Installer explains that Microsoft Office is preferred and LibreOffice is an optional fallback.
 - MSI downloads from the pinned HTTPS Document Foundation URL.
 - Download progress is visible and can be cancelled.
 - SHA-256 is verified before `msiexec` starts the MSI.
@@ -50,7 +50,8 @@
 - MyFile Converter installs normally.
 - No LibreOffice MSI is run without explicit user consent.
 - Image and PDF conversions still work.
-- Office conversions show a clear message that LibreOffice is required.
+- Matching Microsoft Office desktop applications can perform Office conversions.
+- If neither matching Microsoft Office nor LibreOffice is available, Office conversions show a clear dependency message.
 - User can install LibreOffice later or choose `soffice.exe` manually in app settings.
 
 ## Upgrade
@@ -85,6 +86,7 @@
 - Python not installed.
 - Install and launch app.
 - Test on a machine without Office tools.
-- Test on a machine with only Microsoft Office, if that engine exists.
+- Test on a machine with only Microsoft Office.
+- Test on a machine with a partial Office install.
 - Test on a machine with only LibreOffice.
 - Test Windows scaling 125% and 150%.

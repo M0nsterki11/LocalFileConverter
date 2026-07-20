@@ -118,15 +118,24 @@ def exception_to_error_info(error: BaseException) -> ErrorInfo:
             ),
         )
 
-    if isinstance(error, DependencyNotFoundError) or _looks_libreoffice_missing(lowered):
+    if isinstance(error, DependencyNotFoundError) or _looks_office_dependency_missing(
+        lowered
+    ):
         return ErrorInfo(
-            title=_tr("LibreOffice was not found"),
-            message=_tr(
-                "LibreOffice was not found. Install it or choose soffice.exe."
+            title=_tr("Office conversion tool was not found"),
+            message=(
+                getattr(error, "user_message", None)
+                or _tr(
+                    "Microsoft Office or LibreOffice is required for this conversion."
+                )
             ),
             technical_detail=technical_detail,
-            suggestion=_tr(
-                "Choose the correct path to soffice.exe in Settings."
+            suggestion=(
+                getattr(error, "suggestion", None)
+                or _tr(
+                    "Install the matching Microsoft Office desktop application "
+                    "or choose soffice.exe in Settings."
+                )
             ),
         )
 
@@ -218,7 +227,14 @@ def _looks_image_error(text: str) -> bool:
     )
 
 
-def _looks_libreoffice_missing(text: str) -> bool:
-    return "libreoffice" in text and (
-        "not found" in text or "missing" in text
+def _looks_office_dependency_missing(text: str) -> bool:
+    dependency_name = "libreoffice" in text or "microsoft office" in text
+    return dependency_name and any(
+        fragment in text
+        for fragment in (
+            "not found",
+            "missing",
+            "required",
+            "unavailable",
+        )
     )

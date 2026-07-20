@@ -1,5 +1,5 @@
-#define AppVersion "0.5.0"
+#define AppVersion "0.5.1"
 #define AppName "MyFile Converter"
 #define AppPublisher "MyFile Converter"
 #define AppExeName "MyFileConverter.exe"
-#define AppSetupBaseName "MyFileConverter_Setup_0.5.0_x64"
+#define AppSetupBaseName "MyFileConverter_Setup_0.5.1_x64"

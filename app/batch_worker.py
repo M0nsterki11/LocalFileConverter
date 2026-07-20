@@ -99,6 +99,7 @@ class BatchConversionWorker(QObject):
                     multi_page_output_mode=(
                         item.multi_page_output_mode
                     ),
+                    office_engine=item.office_engine,
                     libreoffice_path=self.libreoffice_path,
                     cancel_check=self.is_cancelled,
                     progress_callback=lambda value, item_id=item.unique_id: (

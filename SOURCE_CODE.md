@@ -10,11 +10,11 @@ public repository:
 https://github.com/M0nsterki11/LocalFileConverter
 
 Release binaries must correspond to a Git tag in that repository. Version
-0.5.0 must use tag:
+0.5.1 must use tag:
 
-v0.5.0
+v0.5.1
 
-The v0.5.0 tag was not present when this notice was prepared. It must be created and pushed before publishing the installer.
+The v0.5.1 tag was not present when this notice was prepared. It must be created and pushed before publishing the installer.
 
 The repository includes the build scripts, packaging configuration, dependency
 declarations, translation files, and application source needed to rebuild the

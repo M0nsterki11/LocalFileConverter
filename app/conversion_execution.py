@@ -16,11 +16,18 @@ from app.i18n import translate
 from app.settings import (
     DEFAULT_IMAGE_QUALITY,
     DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+    DEFAULT_OFFICE_ENGINE,
     DEFAULT_PDF_DPI,
 )
+from app.exceptions import ConversionError
 from converters.base_converter import CancelCheck, ConversionCancelledError
 from converters.image_converter import convert_image
 from converters.office_converter import convert_office_to_pdf
+from converters.microsoft_office_converter import (
+    convert_with_microsoft_office,
+    get_microsoft_office_application,
+    is_microsoft_office_available,
+)
 from converters.pdf_converter import (
     convert_image_to_pdf,
     convert_pdf_to_images,
@@ -31,6 +38,7 @@ from utils.logging_utils import (
     log_exception_safely,
     sanitize_path,
 )
+from utils.libreoffice_utils import is_valid_libreoffice_executable
 from utils.output_safety import (
     ensure_output_directory_ready,
     ensure_sufficient_disk_space,
@@ -51,6 +59,7 @@ def run_conversion(
     dpi: int = DEFAULT_PDF_DPI,
     page_selection: str | None = None,
     multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
+    office_engine: str = DEFAULT_OFFICE_ENGINE,
     libreoffice_path: str | Path | None = None,
     cancel_check: CancelCheck | None = None,
     progress_callback: ProgressCallback | None = None,
@@ -91,7 +100,7 @@ def run_conversion(
         sanitize_path(input_path),
         normalized_format,
         operation,
-        "libreoffice" if extension in OFFICE_EXTENSIONS else "internal",
+        office_engine if extension in OFFICE_EXTENSIONS else "internal",
         human_readable_size(disk_check.required_bytes),
         human_readable_size(disk_check.available_bytes),
     )
@@ -106,6 +115,7 @@ def run_conversion(
             dpi=dpi,
             page_selection=page_selection,
             multi_page_output_mode=multi_page_output_mode,
+            office_engine=office_engine,
             libreoffice_path=libreoffice_path,
             cancel_check=cancel_check,
             progress_callback=progress_callback,
@@ -153,6 +163,7 @@ def _run_converter(
     dpi: int,
     page_selection: str | None,
     multi_page_output_mode: str,
+    office_engine: str,
     libreoffice_path: str | Path | None,
     cancel_check: CancelCheck | None,
     progress_callback: ProgressCallback | None,
@@ -196,15 +207,11 @@ def _run_converter(
                 _tr("Office documents can currently only be converted to PDF.")
             )
 
-        if libreoffice_path is None:
-            raise DependencyNotFoundError(
-                _tr("LibreOffice path is not configured.")
-            )
-
-        return convert_office_to_pdf(
+        return _convert_office_document(
             input_file=input_path,
             output_directory=output_path,
-            libreoffice_executable=libreoffice_path,
+            office_engine=office_engine,
+            libreoffice_path=libreoffice_path,
             cancel_check=cancel_check,
             progress_callback=progress_callback,
             status_callback=status_callback,
@@ -212,6 +219,144 @@ def _run_converter(
 
     raise UnsupportedFormatError(
         _tr("The selected format is not supported for conversion yet.")
+    )
+
+
+def _convert_office_document(
+    *,
+    input_file: Path,
+    output_directory: Path,
+    office_engine: str,
+    libreoffice_path: str | Path | None,
+    cancel_check: CancelCheck | None,
+    progress_callback: ProgressCallback | None,
+    status_callback: StatusCallback | None,
+) -> Path:
+    logger = logging.getLogger(LOGGER_NAME)
+    extension = input_file.suffix.lower()
+    office_application = get_microsoft_office_application(extension)
+    libreoffice_available = is_valid_libreoffice_executable(
+        libreoffice_path
+    )
+    prefer_microsoft_office = office_engine != "libreoffice"
+
+    if prefer_microsoft_office and is_microsoft_office_available(extension):
+        app_name = (
+            office_application.display_name
+            if office_application is not None
+            else "Microsoft Office"
+        )
+        logger.info(
+            "Office backend selected input=%s backend=microsoft_office app=%s",
+            sanitize_path(input_file),
+            app_name,
+        )
+
+        try:
+            return convert_with_microsoft_office(
+                input_file=input_file,
+                output_directory=output_directory,
+                cancel_check=cancel_check,
+                progress_callback=progress_callback,
+                status_callback=status_callback,
+            )
+        except ConversionCancelledError:
+            raise
+        except Exception as error:
+            log_exception_safely(
+                logger,
+                (
+                    "Microsoft Office conversion failed input=%s app=%s; "
+                    "checking LibreOffice fallback"
+                ),
+                sanitize_path(input_file),
+                app_name,
+            )
+
+            if libreoffice_available:
+                if status_callback is not None:
+                    status_callback(
+                        _tr(
+                            "Microsoft Office conversion failed. Trying LibreOffice..."
+                        )
+                    )
+
+                logger.info(
+                    "Office fallback selected input=%s backend=libreoffice",
+                    sanitize_path(input_file),
+                )
+                return _convert_with_libreoffice(
+                    input_file=input_file,
+                    output_directory=output_directory,
+                    libreoffice_path=libreoffice_path,
+                    cancel_check=cancel_check,
+                    progress_callback=progress_callback,
+                    status_callback=status_callback,
+                )
+
+            raise ConversionError(
+                (
+                    f"{app_name} COM conversion failed and LibreOffice "
+                    f"fallback is unavailable: {error}"
+                ),
+                user_message=_tr(
+                    "{app_name} could not complete the conversion, and "
+                    "LibreOffice is not available as a fallback."
+                ).format(app_name=app_name),
+                suggestion=_tr(
+                    "Open the document in its Microsoft Office application "
+                    "to check it, or install LibreOffice and choose "
+                    "soffice.exe in Settings."
+                ),
+            ) from error
+
+    if libreoffice_available:
+        logger.info(
+            "Office backend selected input=%s backend=libreoffice",
+            sanitize_path(input_file),
+        )
+        return _convert_with_libreoffice(
+            input_file=input_file,
+            output_directory=output_directory,
+            libreoffice_path=libreoffice_path,
+            cancel_check=cancel_check,
+            progress_callback=progress_callback,
+            status_callback=status_callback,
+        )
+
+    raise DependencyNotFoundError(
+        "No usable Microsoft Office or LibreOffice backend was found.",
+        user_message=_tr(
+            "Microsoft Office or LibreOffice is required for this conversion."
+        ),
+        suggestion=_tr(
+            "Install the matching Microsoft Office desktop application or "
+            "install LibreOffice and choose soffice.exe in Settings."
+        ),
+    )
+
+
+def _convert_with_libreoffice(
+    *,
+    input_file: Path,
+    output_directory: Path,
+    libreoffice_path: str | Path | None,
+    cancel_check: CancelCheck | None,
+    progress_callback: ProgressCallback | None,
+    status_callback: StatusCallback | None,
+) -> Path:
+    if libreoffice_path is None:
+        raise DependencyNotFoundError(
+            "LibreOffice fallback was selected without an executable path."
+        )
+
+    return convert_office_to_pdf(
+        input_file=input_file,
+        output_directory=output_directory,
+        libreoffice_executable=libreoffice_path,
+        cancel_check=cancel_check,
+        progress_callback=progress_callback,
+        status_callback=status_callback,
     )
 
 

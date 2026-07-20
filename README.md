@@ -1,7 +1,7 @@
 MyFile Converter
 ================
 
-Version: 0.5.0
+Version: 0.5.1
 
 MyFile Converter is a Windows desktop application built with Python and
 PySide6. File processing happens locally on the computer; documents are not
@@ -28,7 +28,7 @@ https://github.com/M0nsterki11/LocalFileConverter
 ```
 
 Source code for released binaries is available from the corresponding Git tag
-in that repository. Release `0.5.0` must correspond to tag `v0.5.0`.
+in that repository. Release `0.5.1` must correspond to tag `v0.5.1`.
 
 Third-Party Software
 --------------------
@@ -69,8 +69,11 @@ Office Conversion
 -----------------
 
 Office conversion uses locally installed tools. The current implementation
-supports LibreOffice through `soffice.exe`; the app can detect it automatically
-or use a manually selected path.
+prefers the matching Microsoft Office desktop application through Windows COM:
+Word for DOCX, PowerPoint for PPTX, and Excel for XLSX. Detection is per format,
+so the three applications do not all need to be installed. If the matching app
+is unavailable or its conversion fails, LibreOffice is used as a fallback
+through an automatically detected or manually selected `soffice.exe` path.
 
 Localization
 ------------
@@ -217,7 +220,7 @@ If the ONEDIR build is already fresh, the app build can be skipped:
 The final Setup EXE is here:
 
 ```text
-installer_output\MyFileConverter_Setup_0.5.0_x64.exe
+installer_output\MyFileConverter_Setup_0.5.1_x64.exe
 ```
 
 The installer is per-user and installs the app into:
@@ -228,7 +231,8 @@ The installer is per-user and installs the app into:
 
 Microsoft Office is not included in the installer. Optional LibreOffice download
 is controlled by `packaging\libreoffice_dependency.json`, which must keep the
-pinned version, official URL, expected size, and SHA-256.
+pinned version, official URL, expected size, and SHA-256. LibreOffice is offered
+as an optional fallback and is never installed automatically.
 
 The current installer is not digitally signed. Windows SmartScreen may show
 Unknown publisher. `installer_output/` is not committed; Setup EXE files are
@@ -237,8 +241,8 @@ published later as GitHub Release assets.
 Release Source Correspondence
 -----------------------------
 
-Release binaries must correspond to a Git tag. For version `0.5.0`, publish the
-installer only after tag `v0.5.0` exists in the public repository and points to
+Release binaries must correspond to a Git tag. For version `0.5.1`, publish the
+installer only after tag `v0.5.1` exists in the public repository and points to
 the exact source state used to build the ONEDIR application and Setup EXE.
 
 The installed `SOURCE_CODE.md` file tells users where to obtain the

@@ -41,12 +41,15 @@ Copy the whole `dist\MyFileConverter\` folder when testing on another PC.
 
 ## Office
 
-- DOCX to PDF through the available local Office engine.
-- PPTX to PDF through the available local Office engine.
-- XLSX to PDF through the available local Office engine.
-- LibreOffice fallback.
+- DOCX to PDF prefers Microsoft Word when Word is installed and usable.
+- PPTX to PDF prefers Microsoft PowerPoint when PowerPoint is installed and usable.
+- XLSX to PDF prefers Microsoft Excel when Excel is installed and usable.
+- Detection is per application; one missing Office app does not disable the others.
+- A Microsoft Office COM failure uses LibreOffice as a fallback when available.
+- LibreOffice-only conversion works without Microsoft Office.
 - Manual LibreOffice `soffice.exe` path.
 - Missing Office/LibreOffice gives a clear user error.
+- Success, failure, and cancellation do not leave app-owned Office processes running.
 - Cancellation does not close user-owned Office/LibreOffice processes.
 
 ## Safety
@@ -64,7 +67,8 @@ Copy the whole `dist\MyFileConverter\` folder when testing on another PC.
 - Python not installed.
 - No Microsoft Office installed.
 - No LibreOffice installed.
-- Only Microsoft Office installed, if that engine exists in the build.
+- Only Microsoft Office installed.
+- Partial Microsoft Office install, such as Word without Excel.
 - Only LibreOffice installed.
 - Windows scaling at 125% or 150%.
 

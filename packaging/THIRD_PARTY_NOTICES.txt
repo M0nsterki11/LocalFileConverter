@@ -39,6 +39,16 @@ Package: pillow
 Version: 12.3.0
 Metadata license expression: MIT-CMU
 
+pywin32
+-------
+
+Package: pywin32
+Version: 312
+License: Python Software Foundation License
+
+pywin32 supplies the Windows COM support used to automate locally installed
+Microsoft Office desktop applications. Microsoft Office itself is not bundled.
+
 PyMuPDF / MuPDF
 ---------------
 

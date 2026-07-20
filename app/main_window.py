@@ -636,14 +636,14 @@ class MainWindow(QMainWindow):
         self.output_directory_title_label.setText(self.tr("Output folder:"))
         self.select_output_button.setText(self.tr("Change folder"))
 
-        self.libreoffice_group.setTitle(self.tr("LibreOffice for Office to PDF"))
+        self.libreoffice_group.setTitle(self.tr("Office conversion"))
         self.libreoffice_program_label.setText(self.tr("Program:"))
         self.detect_libreoffice_button.setText(self.tr("Detect automatically"))
         self.select_libreoffice_button.setText(self.tr("Choose soffice.exe"))
         self.libreoffice_description.setText(
             self.tr(
-                "LibreOffice is required for DOCX, PPTX, and XLSX conversions. "
-                "The path is saved for the next launch."
+                "Office documents can be converted using Microsoft Office or "
+                "LibreOffice. The LibreOffice path is saved for fallback use."
             )
         )
 
