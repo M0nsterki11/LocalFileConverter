@@ -1,3 +1,5 @@
+"""Runtime Qt translation management with English as the fallback."""
+
 from __future__ import annotations
 
 import logging
@@ -20,6 +22,8 @@ TRANSLATION_FILES = {
 
 
 class TranslationManager(QObject):
+    """Own the active QTranslator and notify widgets of language changes."""
+
     language_changed = Signal(str)
 
     def __init__(self) -> None:
@@ -29,9 +33,11 @@ class TranslationManager(QObject):
 
     @property
     def language(self) -> str:
+        """Return the currently active language code."""
         return self._language
 
     def set_language(self, language: str) -> str:
+        """Install the requested translation or fall back to English."""
         requested_language = validate_language(language)
         app = QCoreApplication.instance()
 
@@ -46,6 +52,8 @@ class TranslationManager(QObject):
             self.language_changed.emit(self._language)
             return self._language
 
+        # Keeping the translator parented and referenced prevents Qt from
+        # destroying it while translated widgets are still active.
         translator = QTranslator(self)
         translation_path = get_translation_path(requested_language)
 
@@ -80,6 +88,7 @@ class TranslationManager(QObject):
 
 
 def get_translation_manager() -> TranslationManager:
+    """Return the process-wide translation manager."""
     global _TRANSLATION_MANAGER
 
     try:
@@ -90,6 +99,7 @@ def get_translation_manager() -> TranslationManager:
 
 
 def validate_language(language: object) -> str:
+    """Normalize a language code, defaulting unsupported values to English."""
     language_code = str(language or "").strip().lower()
 
     if language_code in SUPPORTED_LANGUAGES:
@@ -99,6 +109,7 @@ def validate_language(language: object) -> str:
 
 
 def get_translation_path(language: str) -> Path | None:
+    """Return the bundled translation path for a non-English language."""
     file_name = TRANSLATION_FILES.get(validate_language(language))
 
     if not file_name:
@@ -108,4 +119,5 @@ def get_translation_path(language: str) -> Path | None:
 
 
 def translate(context: str, source_text: str, n: int = -1) -> str:
+    """Translate an English source string through Qt's active translators."""
     return QCoreApplication.translate(context, source_text, None, n)

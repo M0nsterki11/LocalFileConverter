@@ -1,3 +1,5 @@
+"""Drag-and-drop input widget for local files."""
+
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal

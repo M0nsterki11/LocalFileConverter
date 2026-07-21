@@ -1,3 +1,5 @@
+"""Persist and validate application preferences through QSettings."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -47,6 +49,8 @@ LAST_FILE_DIALOG_DIRECTORY_KEY = "paths/last_file_dialog_directory"
 
 @dataclass
 class AppSettings:
+    """Validated user-configurable application preferences."""
+
     theme: str = DEFAULT_THEME
     default_output_directory: Path = DEFAULT_OUTPUT_DIRECTORY
     open_output_after_success: bool = DEFAULT_OPEN_OUTPUT_AFTER_SUCCESS
@@ -62,6 +66,7 @@ class AppSettings:
 
 
 def load_app_settings() -> AppSettings:
+    """Load persisted settings, replacing invalid values with defaults."""
     settings = QSettings()
 
     return AppSettings(
@@ -131,6 +136,7 @@ def load_app_settings() -> AppSettings:
 
 
 def save_app_settings(app_settings: AppSettings) -> None:
+    """Validate and persist all user-configurable settings."""
     settings = QSettings()
     settings.setValue(
         THEME_KEY,
@@ -184,6 +190,7 @@ def save_app_settings(app_settings: AppSettings) -> None:
 
 
 def reset_app_settings() -> AppSettings:
+    """Remove user preferences and persist a fresh default configuration."""
     settings = QSettings()
 
     for key in (
@@ -206,6 +213,7 @@ def reset_app_settings() -> AppSettings:
 
 
 def validate_theme(value: object) -> str:
+    """Return a supported theme name or the default theme."""
     text = str(value or "").strip().lower()
 
     if text in VALID_THEMES:
@@ -215,6 +223,7 @@ def validate_theme(value: object) -> str:
 
 
 def validate_output_directory(value: object) -> Path:
+    """Return a usable output path value without creating it."""
     raw_value = str(value or "").strip()
 
     if not raw_value:
@@ -229,6 +238,7 @@ def validate_output_directory(value: object) -> Path:
 
 
 def validate_dialog_directory(value: object) -> Path:
+    """Return an existing dialog start directory or the default path."""
     raw_value = str(value or "").strip()
 
     if not raw_value:
@@ -243,6 +253,7 @@ def validate_dialog_directory(value: object) -> Path:
 
 
 def validate_image_quality(value: object) -> int:
+    """Return an image quality in the supported range or its default."""
     try:
         quality = int(value)
     except (TypeError, ValueError):
@@ -255,6 +266,7 @@ def validate_image_quality(value: object) -> int:
 
 
 def validate_pdf_dpi(value: object) -> int:
+    """Return a supported PDF rendering DPI or its default."""
     try:
         dpi = int(value)
     except (TypeError, ValueError):
@@ -267,6 +279,7 @@ def validate_pdf_dpi(value: object) -> int:
 
 
 def validate_multi_page_output_mode(value: object) -> str:
+    """Return a supported multi-page output mode or its default."""
     text = str(value or "").strip().lower()
 
     if text in VALID_MULTI_PAGE_OUTPUT_MODES:
@@ -276,6 +289,7 @@ def validate_multi_page_output_mode(value: object) -> str:
 
 
 def validate_office_engine(value: object) -> str:
+    """Return a supported Office backend preference or its default."""
     text = str(value or "").strip().lower()
 
     if text in VALID_OFFICE_ENGINES:
@@ -285,6 +299,7 @@ def validate_office_engine(value: object) -> str:
 
 
 def get_saved_libreoffice_path() -> Path | None:
+    """Return the configured LibreOffice executable path, if present."""
     settings = QSettings()
     saved_value = _read_string(
         settings,
@@ -299,6 +314,7 @@ def get_saved_libreoffice_path() -> Path | None:
 
 
 def save_libreoffice_path(path: str | Path) -> None:
+    """Persist the selected LibreOffice executable path."""
     settings = QSettings()
     settings.setValue(
         LIBREOFFICE_PATH_KEY,
@@ -308,12 +324,14 @@ def save_libreoffice_path(path: str | Path) -> None:
 
 
 def clear_libreoffice_path() -> None:
+    """Remove the persisted LibreOffice executable path."""
     settings = QSettings()
     settings.remove(LIBREOFFICE_PATH_KEY)
     settings.sync()
 
 
 def save_language(language: object) -> str:
+    """Persist a validated UI language and return its code."""
     language_code = validate_language(language)
     settings = QSettings()
     settings.setValue(LANGUAGE_KEY, language_code)
@@ -325,6 +343,7 @@ def save_window_geometry(
     geometry: QByteArray,
     state: QByteArray,
 ) -> None:
+    """Persist the main window geometry and dock/toolbar state."""
     settings = QSettings()
     settings.setValue(WINDOW_GEOMETRY_KEY, geometry)
     settings.setValue(WINDOW_STATE_KEY, state)
@@ -332,6 +351,7 @@ def save_window_geometry(
 
 
 def get_window_geometry() -> QByteArray | None:
+    """Return previously saved main window geometry, if valid."""
     value = QSettings().value(WINDOW_GEOMETRY_KEY)
 
     if isinstance(value, QByteArray) and not value.isEmpty():
@@ -341,6 +361,7 @@ def get_window_geometry() -> QByteArray | None:
 
 
 def get_window_state() -> QByteArray | None:
+    """Return previously saved main window state, if valid."""
     value = QSettings().value(WINDOW_STATE_KEY)
 
     if isinstance(value, QByteArray) and not value.isEmpty():
@@ -350,6 +371,7 @@ def get_window_state() -> QByteArray | None:
 
 
 def save_last_file_dialog_directory(path: str | Path) -> None:
+    """Persist the directory most recently used by a file dialog."""
     directory = Path(path)
 
     if directory.is_file():

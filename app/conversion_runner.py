@@ -1,3 +1,5 @@
+"""Validate conversion requests and route them to the appropriate backend."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -65,6 +67,7 @@ def run_conversion(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
+    """Run one validated conversion and return its published result path."""
     logger = logging.getLogger(LOGGER_NAME)
     started_at = time.monotonic()
     input_path = validate_input_file_for_conversion(input_file)
@@ -240,6 +243,9 @@ def _convert_office_document(
     )
     prefer_microsoft_office = office_engine != "libreoffice"
 
+    # Automatic mode favors the native Office application for fidelity. A
+    # failed COM conversion may still succeed through the independent
+    # LibreOffice backend, but explicit cancellation must never trigger it.
     if prefer_microsoft_office and is_microsoft_office_available(extension):
         app_name = (
             office_application.display_name

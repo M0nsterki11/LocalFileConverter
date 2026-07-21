@@ -1,3 +1,5 @@
+"""Shared product metadata and supported conversion formats."""
+
 APP_NAME = "MyFile Converter"
 APP_VERSION = "0.5.1"
 APP_ORGANIZATION = "LocalFileConverter"

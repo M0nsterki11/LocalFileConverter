@@ -1,3 +1,5 @@
+"""Validate conversion inputs and translate parser failures to domain errors."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,16 +20,19 @@ from app.i18n import translate
 def validate_input_file_for_queue(
     input_file: str | Path,
 ) -> Path:
+    """Validate the basic requirements for adding a path to the queue."""
     return _validate_basic_input(input_file)
 
 
 def validate_input_file_for_conversion(
     input_file: str | Path,
 ) -> Path:
+    """Validate the basic requirements shared by conversion backends."""
     return _validate_basic_input(input_file)
 
 
 def validate_image_file(input_file: str | Path) -> Path:
+    """Return a readable supported image path after verifying its contents."""
     path = _validate_basic_input(input_file)
 
     if path.suffix.lower() not in IMAGE_EXTENSIONS:
@@ -53,6 +58,7 @@ def validate_image_file(input_file: str | Path) -> Path:
 
 
 def validate_pdf_file(input_file: str | Path) -> Path:
+    """Return a readable PDF path after checking encryption and page count."""
     path = _validate_basic_input(input_file)
 
     if path.suffix.lower() != ".pdf":

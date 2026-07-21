@@ -1,3 +1,5 @@
+"""About dialog with version, licensing, logs, and source-code links."""
+
 import logging
 from datetime import date
 
@@ -27,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 class AboutDialog(QDialog):
+    """Present product and licensing information for the installed build."""
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setMinimumWidth(460)

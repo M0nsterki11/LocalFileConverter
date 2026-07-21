@@ -1,3 +1,5 @@
+"""Convert PDFs to images and images to single or multi-page PDFs."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -69,6 +71,7 @@ def convert_pdf_to_images(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
+    """Render selected PDF pages to one image, a folder, or a ZIP archive."""
     input_path = validate_pdf_file(input_file)
     output_path = ensure_output_directory_ready(output_directory)
     normalized_format = output_format.upper()
@@ -168,6 +171,7 @@ def convert_image_to_pdf(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
+    """Convert one supported image into a uniquely named PDF."""
     input_path = validate_image_file(input_file)
     output_path = ensure_output_directory_ready(output_directory)
 
@@ -256,6 +260,7 @@ def convert_images_to_pdf(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
+    """Combine two or more images into an ordered multi-page PDF."""
     if len(input_files) < 2:
         raise PdfConversionError(
             _tr("Choose at least two images for a combined PDF.")
@@ -377,6 +382,7 @@ def parse_page_selection(
     selection: str | None,
     page_count: int,
 ) -> list[int]:
+    """Parse one-based page numbers/ranges into unique zero-based indexes."""
     if page_count <= 0:
         raise PdfConversionError(
             _tr("The PDF has no available pages.")

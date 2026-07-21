@@ -1,3 +1,5 @@
+"""Convert Office documents to PDF through Windows COM automation."""
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -44,6 +46,8 @@ _OFFICE_EXIT_TIMEOUT_MS = 5_000
 
 @dataclass(frozen=True)
 class MicrosoftOfficeApplication:
+    """COM registration and display metadata for one Office application."""
+
     key: str
     display_name: str
     prog_id: str
@@ -75,6 +79,7 @@ class MicrosoftOfficeConversionError(ConversionError):
 def get_microsoft_office_application(
     extension: str,
 ) -> MicrosoftOfficeApplication | None:
+    """Return the Office application registered for a file extension."""
     return MICROSOFT_OFFICE_APPLICATIONS.get(extension.lower())
 
 
@@ -120,6 +125,7 @@ def convert_with_microsoft_office(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
+    """Convert one document using a separately owned Office COM process."""
     input_path = validate_input_file_for_conversion(input_file)
     office_application = get_microsoft_office_application(
         input_path.suffix.lower()
@@ -172,6 +178,8 @@ def convert_with_microsoft_office(
     try:
         with _initialized_com() as client:
             try:
+                # DispatchEx creates an application instance this conversion
+                # owns, so cleanup cannot close a user's existing Office window.
                 application = client.DispatchEx(office_application.prog_id)
                 process_id = _get_application_process_id(application)
                 _configure_application(application)
@@ -263,6 +271,7 @@ def convert_with_microsoft_office(
 
 @contextmanager
 def _initialized_com() -> Iterator[Any]:
+    """Initialize COM for the current worker thread and always balance it."""
     try:
         import pythoncom
         import win32com.client
@@ -274,6 +283,7 @@ def _initialized_com() -> Iterator[Any]:
             ),
         ) from error
 
+    # Qt workers run on threads that Python did not initialize for COM.
     pythoncom.CoInitialize()
 
     try:

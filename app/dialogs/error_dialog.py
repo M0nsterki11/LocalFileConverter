@@ -1,3 +1,5 @@
+"""User-facing error dialog with optional technical details."""
+
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
@@ -17,6 +19,8 @@ from utils.logging_utils import open_log_directory
 
 
 class ErrorDetailsDialog(QDialog):
+    """Show a safe error summary while keeping diagnostics available."""
+
     def __init__(
         self,
         error_info: ErrorInfo,

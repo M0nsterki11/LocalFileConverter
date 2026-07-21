@@ -1,3 +1,5 @@
+"""Queue item models and helpers for preparing conversion batches."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -21,6 +23,8 @@ from utils.input_validation import validate_input_file_for_queue
 
 
 class ConversionStatus(Enum):
+    """Lifecycle states shown for a queued conversion item."""
+
     PENDING = "pending"
     CONVERTING = "converting"
     SUCCESS = "success"
@@ -29,6 +33,7 @@ class ConversionStatus(Enum):
 
     @property
     def display_label(self) -> str:
+        """Return the translated label for this status."""
         return {
             ConversionStatus.PENDING: translate("ConversionStatus", "Pending"),
             ConversionStatus.CONVERTING: translate("ConversionStatus", "Converting"),
@@ -40,6 +45,8 @@ class ConversionStatus(Enum):
 
 @dataclass
 class ConversionItem:
+    """Mutable conversion request and its current execution state."""
+
     input_path: Path
     input_format: str
     output_format: str
@@ -60,10 +67,12 @@ class ConversionItem:
 
     @property
     def available_output_formats(self) -> list[str]:
+        """Return output formats supported for this item's input file."""
         return get_available_output_formats(self.input_path)
 
     @property
     def can_run_again(self) -> bool:
+        """Return whether the item may be included in a new batch."""
         return self.status in {
             ConversionStatus.PENDING,
             ConversionStatus.FAILED,
@@ -74,6 +83,7 @@ class ConversionItem:
         self,
         output_directory: Path,
     ) -> None:
+        """Reset transient results before placing the item in a new batch."""
         self.output_directory = output_directory
         self.status = ConversionStatus.PENDING
         self.progress = 0
@@ -86,18 +96,22 @@ class ConversionItem:
         status: ConversionStatus,
         message: str | None = None,
     ) -> None:
+        """Update the lifecycle state and optional user-facing message."""
         self.status = status
         self.status_message = message
 
 
 @dataclass
 class AddFilesResult:
+    """Categorized result of adding paths to the conversion queue."""
+
     added_items: list[ConversionItem]
     unsupported_paths: list[Path]
     duplicate_paths: list[Path]
 
 
 def normalize_input_path(path: str | Path) -> str:
+    """Normalize a path for case-insensitive duplicate detection."""
     return str(Path(path).expanduser().resolve()).casefold()
 
 
@@ -109,6 +123,7 @@ def create_conversion_item(
     dpi: int = DEFAULT_PDF_DPI,
     multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
 ) -> ConversionItem:
+    """Create a queue item with defaults appropriate for its input format."""
     path = Path(input_path)
     output_formats = get_available_output_formats(path)
 
@@ -141,6 +156,7 @@ def build_unique_supported_items(
     dpi: int = DEFAULT_PDF_DPI,
     multi_page_output_mode: str = DEFAULT_MULTI_PAGE_OUTPUT_MODE,
 ) -> AddFilesResult:
+    """Build queue items while separating unsupported and duplicate paths."""
     known_paths = {
         normalize_input_path(item.input_path)
         for item in existing_items

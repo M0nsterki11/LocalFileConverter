@@ -1,3 +1,5 @@
+"""Locate and validate a local LibreOffice command-line executable."""
+
 import os
 import shutil
 from pathlib import Path

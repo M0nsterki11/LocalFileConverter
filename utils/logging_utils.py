@@ -1,3 +1,5 @@
+"""Configure resilient local logging and sanitize user-specific paths."""
+
 from __future__ import annotations
 
 import logging
@@ -19,6 +21,7 @@ TEMP_PREFIX = "lfc_"
 
 
 def get_log_directory() -> Path:
+    """Return the per-user directory used for application logs."""
     local_app_data = os.environ.get("LOCALAPPDATA")
 
     if local_app_data:
@@ -30,6 +33,7 @@ def get_log_directory() -> Path:
 
 
 def get_log_file_path() -> Path:
+    """Return the active application log file path."""
     return get_log_directory() / LOG_FILE_NAME
 
 
@@ -38,6 +42,7 @@ def setup_logging(
     level: int | None = None,
     log_directory: str | Path | None = None,
 ) -> logging.Logger:
+    """Configure the shared rotating logger with a stderr fallback."""
     logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(level if level is not None else _default_log_level())
     logger.propagate = False
@@ -74,6 +79,7 @@ def setup_logging(
 
 
 def open_log_directory() -> bool:
+    """Open the log directory and return whether the shell accepted it."""
     try:
         from utils.file_utils import open_directory
 
@@ -89,6 +95,7 @@ def log_exception_safely(
     exc_info: bool | BaseException | tuple[Any, Any, Any] = True,
     **kwargs: Any,
 ) -> None:
+    """Log an exception without allowing logging failures to escape."""
     try:
         target_logger = logger or logging.getLogger(LOGGER_NAME)
         target_logger.exception(
@@ -102,6 +109,7 @@ def log_exception_safely(
 
 
 def sanitize_path(path: str | Path) -> str:
+    """Shorten home-relative paths while preserving useful diagnostics."""
     try:
         resolved_path = Path(path).expanduser().resolve()
         home_path = Path.home().expanduser().resolve()
@@ -117,6 +125,7 @@ def sanitize_path(path: str | Path) -> str:
 
 
 def sanitize_for_log(value: object) -> str:
+    """Replace the current user's home path in arbitrary log text."""
     text = str(value)
 
     try:
@@ -136,6 +145,7 @@ def cleanup_old_lfc_temp_files(
     max_age_seconds: int = 24 * 60 * 60,
     logger: logging.Logger | None = None,
 ) -> int:
+    """Best-effort remove stale application temp entries and return a count."""
     target_logger = logger or logging.getLogger(LOGGER_NAME)
     root = (
         Path(temp_directory)

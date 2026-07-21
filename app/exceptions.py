@@ -1,3 +1,5 @@
+"""Domain exceptions shared by validation, converters, and the UI."""
+
 from __future__ import annotations
 
 

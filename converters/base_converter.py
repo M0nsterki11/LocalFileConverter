@@ -1,3 +1,5 @@
+"""Shared cancellation types and checks for conversion backends."""
+
 from collections.abc import Callable
 
 from app.exceptions import ConversionCancelledError

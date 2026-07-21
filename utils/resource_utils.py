@@ -1,3 +1,5 @@
+"""Resolve resources in source runs and PyInstaller frozen builds."""
+
 from __future__ import annotations
 
 import sys
@@ -10,6 +12,8 @@ def get_bundle_roots() -> tuple[Path, ...]:
         roots: list[Path] = []
         meipass = getattr(sys, "_MEIPASS", None)
 
+        # ONEFILE extracts data under _MEIPASS; ONEDIR may expose resources
+        # beside the executable or below its _internal directory.
         if meipass:
             roots.append(Path(meipass))
 
@@ -38,6 +42,7 @@ def get_bundle_root() -> Path:
 
 
 def get_resource_path(relative_path: str | Path) -> Path:
+    """Resolve a resource against source, ONEFILE, and ONEDIR roots."""
     relative = Path(relative_path)
     roots = get_bundle_roots()
 
@@ -51,4 +56,5 @@ def get_resource_path(relative_path: str | Path) -> Path:
 
 
 def resource_exists(relative_path: str | Path) -> bool:
+    """Return whether a bundled or source-tree resource exists."""
     return get_resource_path(relative_path).exists()

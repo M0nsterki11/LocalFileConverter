@@ -1,3 +1,5 @@
+"""Main window and top-level workflow coordination for the desktop app."""
+
 from pathlib import Path
 import time
 
@@ -68,6 +70,8 @@ from utils.output_safety import ensure_output_directory_ready
 
 
 class MainWindow(QMainWindow):
+    """Coordinate the conversion queue, settings, dialogs, and worker thread."""
+
     def __init__(
         self,
         app_settings: AppSettings | None = None,
@@ -1398,6 +1402,8 @@ class MainWindow(QMainWindow):
         )
         self.batch_worker.moveToThread(self.batch_thread)
 
+        # Qt owns deletion through the event loop: batch completion stops the
+        # thread, then deleteLater releases both objects in their proper thread.
         self.batch_thread.started.connect(self.batch_worker.run)
         self.batch_worker.batch_started.connect(
             self._batch_started
@@ -1450,6 +1456,8 @@ class MainWindow(QMainWindow):
         self.status_label.setText(
             self.tr("Status: Cancelling batch conversion...")
         )
+        # The UI remains responsive while the worker reaches its next safe
+        # cancellation checkpoint and removes any unpublished output.
         self.batch_worker.cancel()
 
     def _batch_started(self) -> None:

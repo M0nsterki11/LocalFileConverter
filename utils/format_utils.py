@@ -1,3 +1,5 @@
+"""Look up supported input and output formats from file extensions."""
+
 from pathlib import Path
 
 from app.constants import (

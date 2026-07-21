@@ -1,3 +1,5 @@
+"""Settings editor for appearance, conversion defaults, and Office tools."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -56,6 +58,8 @@ from utils.logging_utils import open_log_directory
 
 
 class SettingsDialog(QDialog):
+    """Edit an isolated settings copy and expose it after user acceptance."""
+
     def __init__(
         self,
         app_settings: AppSettings,
@@ -84,10 +88,12 @@ class SettingsDialog(QDialog):
 
     @property
     def app_settings(self) -> AppSettings:
+        """Return the settings currently represented by the controls."""
         return self._collect_settings()
 
     @property
     def libreoffice_path(self) -> Path | None:
+        """Return the selected LibreOffice executable when it remains valid."""
         if is_valid_libreoffice_executable(self._libreoffice_path):
             return self._libreoffice_path
 

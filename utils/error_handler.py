@@ -1,3 +1,5 @@
+"""Translate technical exceptions into safe, actionable UI error details."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,6 +21,8 @@ from utils.logging_utils import sanitize_for_log
 
 @dataclass(frozen=True)
 class ErrorInfo:
+    """User-facing error content plus sanitized diagnostic detail."""
+
     title: str
     message: str
     technical_detail: str
@@ -26,10 +30,13 @@ class ErrorInfo:
 
 
 def exception_to_error_info(error: BaseException) -> ErrorInfo:
+    """Map an exception to localized UI text without losing diagnostics."""
     technical_detail = _technical_detail(error)
     message_text = str(error)
     lowered = message_text.casefold()
 
+    # Domain errors carry technical context for logs, while this boundary
+    # deliberately exposes only short, actionable language to the user.
     if isinstance(error, ConversionCancelledError):
         return ErrorInfo(
             title=_tr("Conversion was cancelled"),

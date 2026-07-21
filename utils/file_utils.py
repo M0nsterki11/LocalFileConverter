@@ -1,3 +1,5 @@
+"""Filesystem naming and shell-opening helpers."""
+
 from pathlib import Path
 
 from PySide6.QtCore import QUrl

@@ -1,3 +1,5 @@
+"""Convert Office documents to PDF through headless LibreOffice."""
+
 import os
 import shutil
 import subprocess
@@ -91,6 +93,8 @@ def convert_office_to_pdf(
     _emit_progress(progress_callback, 10)
 
     with (
+        # A private profile isolates this process from an already-running
+        # LibreOffice instance and avoids profile lock/contention dialogs.
         TemporaryDirectory(
             prefix="lfc_office_output_",
             ignore_cleanup_errors=True,

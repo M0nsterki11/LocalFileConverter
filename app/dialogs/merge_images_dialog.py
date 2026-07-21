@@ -1,3 +1,5 @@
+"""Dialog and background worker for combining images into one PDF."""
+
 from __future__ import annotations
 
 import logging
@@ -38,6 +40,8 @@ from utils.logging_utils import (
 
 
 class MergeImagesWorker(QObject):
+    """Merge images off the UI thread and report completion through signals."""
+
     progress_changed = Signal(int)
     status_changed = Signal(str)
     merge_finished = Signal(str)
@@ -54,15 +58,19 @@ class MergeImagesWorker(QObject):
         self.image_paths = image_paths
         self.output_directory = output_directory
         self.output_filename = output_filename
+        # The converter polls this event at cleanup-safe boundaries.
         self._cancel_event = Event()
 
     def cancel(self) -> None:
+        """Request cooperative cancellation of the merge operation."""
         self._cancel_event.set()
 
     def is_cancelled(self) -> bool:
+        """Return whether merge cancellation has been requested."""
         return self._cancel_event.is_set()
 
     def run(self) -> None:
+        """Run the merge and emit exactly one terminal result signal."""
         logger = logging.getLogger(LOGGER_NAME)
         started_at = time.monotonic()
 
@@ -103,6 +111,8 @@ class MergeImagesWorker(QObject):
 
 
 class MergeImagesDialog(QDialog):
+    """Collect ordered image inputs and manage their background merge."""
+
     def __init__(
         self,
         output_directory: Path | None = None,
@@ -438,6 +448,8 @@ class MergeImagesDialog(QDialog):
         )
         self.worker.moveToThread(self.thread)
 
+        # Terminal worker signals stop the thread and schedule QObject cleanup
+        # in the owning event loops before local references are cleared.
         self.thread.started.connect(self.worker.run)
         self.worker.progress_changed.connect(
             self.progress_bar.setValue

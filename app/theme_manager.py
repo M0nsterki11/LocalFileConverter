@@ -1,3 +1,5 @@
+"""Resolve and apply the application's light, dark, or system theme."""
+
 from __future__ import annotations
 
 import logging
@@ -16,6 +18,8 @@ DEFAULT_THEME_DIRECTORY = get_resource_path("resources/themes")
 
 
 class ThemeManager:
+    """Load QSS resources and apply the selected appearance to Qt."""
+
     def __init__(
         self,
         theme_directory: Path | None = None,
@@ -31,6 +35,7 @@ class ThemeManager:
         app: QApplication,
         theme: str,
     ) -> str:
+        """Apply a validated theme and return its resolved light/dark value."""
         resolved_theme = self.resolve_theme(app, theme)
         app.setStyleSheet(
             self.build_stylesheet(resolved_theme)
@@ -42,6 +47,7 @@ class ThemeManager:
         app: QApplication,
         theme: str,
     ) -> str:
+        """Resolve a configured theme, including the system preference."""
         validated_theme = validate_theme(theme)
 
         if validated_theme != "system":
@@ -53,6 +59,7 @@ class ThemeManager:
         self,
         app: QApplication,
     ) -> str:
+        """Detect the Qt color scheme, with a palette-based fallback."""
         try:
             color_scheme = app.styleHints().colorScheme()
 
@@ -75,6 +82,7 @@ class ThemeManager:
         self,
         theme: str,
     ) -> str:
+        """Combine common QSS with the requested color-specific QSS."""
         resolved_theme = (
             theme
             if theme in {"light", "dark"}
@@ -96,6 +104,7 @@ class ThemeManager:
         self,
         filename: str,
     ) -> str:
+        """Read a theme resource, logging and returning empty text on failure."""
         path = self.theme_directory / filename
 
         try:

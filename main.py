@@ -1,3 +1,5 @@
+"""Start the MyFile Converter desktop application."""
+
 import sys
 import traceback
 
@@ -25,6 +27,7 @@ from utils.logging_utils import (
 
 
 def main() -> int:
+    """Initialize application services and enter the Qt event loop."""
     logger = setup_logging()
     logger.info("Starting %s version=%s", APP_NAME, APP_VERSION)
     cleanup_old_lfc_temp_files(logger=logger)

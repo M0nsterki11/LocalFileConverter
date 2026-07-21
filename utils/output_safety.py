@@ -1,3 +1,5 @@
+"""Protect output creation with validation, capacity checks, and publishing."""
+
 from __future__ import annotations
 
 import os
@@ -20,6 +22,8 @@ MIN_FREE_SPACE_RESERVE_BYTES = 100 * 1024 * 1024
 
 @dataclass(frozen=True)
 class DiskSpaceCheck:
+    """Estimated output demand and available capacity at validation time."""
+
     required_bytes: int
     available_bytes: int
     reserve_bytes: int
@@ -28,6 +32,7 @@ class DiskSpaceCheck:
 def ensure_output_directory_ready(
     output_directory: str | Path,
 ) -> Path:
+    """Create an output directory and verify that it accepts new files."""
     path = Path(output_directory)
 
     try:
@@ -78,6 +83,7 @@ def estimate_required_space_bytes(
     dpi: int = 150,
     page_count: int | None = None,
 ) -> int:
+    """Estimate conservative temporary and final storage for an operation."""
     paths = _normalize_paths(input_paths)
     total_input_bytes = sum(_safe_file_size(path) for path in paths)
     dpi_factor = max(1.0, (max(72, int(dpi)) / 150.0) ** 2)
@@ -117,6 +123,7 @@ def ensure_sufficient_disk_space(
     reserve_bytes: int = MIN_FREE_SPACE_RESERVE_BYTES,
     usage_provider=shutil.disk_usage,
 ) -> DiskSpaceCheck:
+    """Verify estimated output space plus a reserve remains available."""
     output_path = Path(output_directory)
 
     try:
@@ -156,6 +163,7 @@ def ensure_sufficient_disk_space(
 
 
 def human_readable_size(size_bytes: int) -> str:
+    """Format a non-negative byte count for user-facing messages."""
     value = float(max(0, int(size_bytes)))
 
     for unit in ("B", "KB", "MB", "GB"):
@@ -170,6 +178,7 @@ def human_readable_size(size_bytes: int) -> str:
 
 
 def get_temporary_output_path(final_path: str | Path) -> Path:
+    """Return a unique hidden `.part` path beside the requested result."""
     path = Path(final_path)
     return path.parent / f".{path.name}.{uuid4().hex}.part"
 
@@ -178,6 +187,7 @@ def publish_temporary_file(
     temporary_path: str | Path,
     final_path: str | Path,
 ) -> Path:
+    """Publish a complete temporary file under a conflict-free final name."""
     temp_path = Path(temporary_path)
     requested_final_path = Path(final_path)
 
@@ -191,6 +201,9 @@ def publish_temporary_file(
             _tr("The temporary output file is empty.")
         )
 
+    # The temporary file lives in the destination directory, so rename makes
+    # the completed output visible in one filesystem operation. Rechecking the
+    # name here handles files created after the conversion originally started.
     final_candidate = _unique_file_candidate(requested_final_path)
 
     try:
@@ -212,6 +225,7 @@ def publish_temporary_directory(
     temporary_directory: str | Path,
     final_directory: str | Path,
 ) -> Path:
+    """Publish a prepared directory under a conflict-free final name."""
     temp_path = Path(temporary_directory)
     requested_final_path = Path(final_directory)
 
@@ -246,6 +260,7 @@ def publish_temporary_directory(
 
 
 def validate_zip_file(zip_path: str | Path) -> None:
+    """Raise when a newly written ZIP cannot be read without CRC errors."""
     path = Path(zip_path)
 
     try:
@@ -265,6 +280,7 @@ def validate_zip_file(zip_path: str | Path) -> None:
 
 
 def cleanup_temporary_path(path: str | Path | None) -> None:
+    """Best-effort remove a partial file or directory after failure."""
     if path is None:
         return
 

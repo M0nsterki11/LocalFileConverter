@@ -1,3 +1,5 @@
+"""Load bundled application icons with native Qt fallbacks."""
+
 from __future__ import annotations
 
 from PySide6.QtGui import QIcon
@@ -29,6 +31,7 @@ def get_icon(
     widget: QWidget,
     name: str,
 ) -> QIcon:
+    """Return a named bundled icon or the closest native Qt icon."""
     for extension in (".svg", ".png", ".ico"):
         icon_path = ICON_DIRECTORY / f"{name}{extension}"
 
@@ -47,6 +50,7 @@ def get_icon(
 
 
 def get_app_icon() -> QIcon:
+    """Return the product icon, or a null icon when the resource is absent."""
     if APP_ICON_PATH.exists():
         icon = QIcon(str(APP_ICON_PATH))
 

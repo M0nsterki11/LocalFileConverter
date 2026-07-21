@@ -1,3 +1,5 @@
+"""Convert supported raster images between local image formats."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -43,6 +45,7 @@ def convert_image(
     progress_callback: ProgressCallback | None = None,
     status_callback: StatusCallback | None = None,
 ) -> Path:
+    """Convert one image and publish a complete, uniquely named result."""
     input_path = validate_image_file(input_file)
     output_path = ensure_output_directory_ready(output_directory)
     normalized_format = output_format.upper()

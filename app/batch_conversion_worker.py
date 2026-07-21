@@ -1,3 +1,5 @@
+"""Execute queued conversions sequentially in a Qt worker thread."""
+
 import logging
 import shutil
 import time
@@ -25,6 +27,8 @@ from utils.logging_utils import (
 
 
 class BatchConversionWorker(QObject):
+    """Process conversion items and report progress through thread-safe signals."""
+
     batch_started = Signal()
     item_started = Signal(str)
     item_progress = Signal(str, int)
@@ -47,16 +51,21 @@ class BatchConversionWorker(QObject):
             if libreoffice_path is not None
             else None
         )
+        # Cancellation is cooperative so converters can clean up partial
+        # outputs before control returns to the worker thread.
         self._cancel_event = Event()
 
     def cancel(self) -> None:
+        """Request cooperative cancellation of the active batch."""
         self._cancel_event.set()
 
     def is_cancelled(self) -> bool:
+        """Return whether cancellation has been requested."""
         return self._cancel_event.is_set()
 
     @Slot()
     def run(self) -> None:
+        """Process runnable items until completion or cancellation."""
         logger = logging.getLogger(LOGGER_NAME)
         success_count = 0
         failed_count = 0

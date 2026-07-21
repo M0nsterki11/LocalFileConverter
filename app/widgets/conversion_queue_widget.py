@@ -1,3 +1,5 @@
+"""Table widget for viewing and editing queued conversion items."""
+
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
@@ -18,6 +20,8 @@ from app.icon_provider import get_icon
 
 
 class ConversionQueueWidget(QWidget):
+    """Render conversion items and emit queue-level user actions."""
+
     selection_changed = Signal(str)
     output_format_changed = Signal(str, str)
     remove_requested = Signal(str)
@@ -115,6 +119,7 @@ class ConversionQueueWidget(QWidget):
         self,
         items: list[ConversionItem],
     ) -> None:
+        """Replace the table contents while preserving the current item."""
         current_item_id = self.current_item_id()
         self._items_by_id = {
             item.unique_id: item
@@ -139,6 +144,7 @@ class ConversionQueueWidget(QWidget):
         self,
         item: ConversionItem,
     ) -> None:
+        """Refresh the table row associated with one conversion item."""
         row = self._row_for_item_id(item.unique_id)
 
         if row is None:
@@ -175,6 +181,7 @@ class ConversionQueueWidget(QWidget):
         self._updating = False
 
     def selected_item_ids(self) -> list[str]:
+        """Return identifiers for all selected queue rows."""
         item_ids: list[str] = []
 
         for index in self.table.selectionModel().selectedRows():
@@ -186,6 +193,7 @@ class ConversionQueueWidget(QWidget):
         return item_ids
 
     def current_item_id(self) -> str | None:
+        """Return the current row's item identifier, if any."""
         current_row = self.table.currentRow()
 
         if current_row < 0:
@@ -197,6 +205,7 @@ class ConversionQueueWidget(QWidget):
         self,
         item_id: str,
     ) -> None:
+        """Select the row matching an item identifier when present."""
         row = self._row_for_item_id(item_id)
 
         if row is None:
@@ -209,6 +218,7 @@ class ConversionQueueWidget(QWidget):
         self,
         locked: bool,
     ) -> None:
+        """Prevent queue edits while a batch is running."""
         self._locked = locked
 
         for row in range(self.table.rowCount()):
