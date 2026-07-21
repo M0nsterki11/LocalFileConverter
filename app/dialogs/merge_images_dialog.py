@@ -265,14 +265,19 @@ class MergeImagesDialog(QDialog):
         )
 
     def _apply_icons(self) -> None:
-        self.add_button.setIcon(get_icon(self, "add"))
-        self.move_up_button.setIcon(get_icon(self, "up"))
-        self.move_down_button.setIcon(get_icon(self, "down"))
-        self.remove_button.setIcon(get_icon(self, "remove"))
-        self.clear_button.setIcon(get_icon(self, "clear"))
-        self.select_output_button.setIcon(get_icon(self, "folder"))
-        self.start_button.setIcon(get_icon(self, "merge"))
-        self.cancel_button.setIcon(get_icon(self, "cancel"))
+        icon_assignments = (
+            (self.add_button, "add"),
+            (self.move_up_button, "up"),
+            (self.move_down_button, "down"),
+            (self.remove_button, "remove"),
+            (self.clear_button, "clear"),
+            (self.select_output_button, "folder"),
+            (self.start_button, "merge"),
+            (self.cancel_button, "cancel"),
+        )
+
+        for button, icon_name in icon_assignments:
+            button.setIcon(get_icon(button, icon_name))
 
     def retranslate_ui(self, *_args) -> None:
         self.setWindowTitle(self.tr("Merge images into one PDF"))

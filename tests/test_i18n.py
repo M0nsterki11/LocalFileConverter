@@ -139,7 +139,12 @@ def test_main_settings_and_about_runtime_language_switch(
     about_dialog = AboutDialog()
 
     try:
+        main_window.drop_area.set_files(
+            [tmp_path / "first.png", tmp_path / "second.pdf"]
+        )
         assert main_window.add_files_button.text() == "Add files"
+        assert main_window.drop_area.choose_files_button.text() == "Choose files"
+        assert main_window.drop_area.title_label.text() == "2 files added"
         assert settings_dialog.windowTitle() == "Settings"
         assert about_dialog.windowTitle() == f"About {APP_NAME}"
         assert about_dialog.license_label.text() == (
@@ -153,6 +158,12 @@ def test_main_settings_and_about_runtime_language_switch(
         get_translation_manager().set_language("hr")
 
         assert main_window.add_files_button.text() == "Dodaj datoteke"
+        assert main_window.drop_area.choose_files_button.text() == (
+            "Odaberi datoteke"
+        )
+        assert main_window.drop_area.title_label.text() == (
+            "Dodano: 2 datoteka"
+        )
         assert settings_dialog.windowTitle() == "Postavke"
         assert about_dialog.windowTitle() == f"O aplikaciji {APP_NAME}"
         assert about_dialog.license_label.text() == (

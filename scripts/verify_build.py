@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
+UI_ICON_DIRECTORY = PROJECT_ROOT / "resources" / "icons"
 LICENSE_PATH = PROJECT_ROOT / "LICENSE"
 NOTICE_PATH = PROJECT_ROOT / "NOTICE"
 SOURCE_CODE_PATH = PROJECT_ROOT / "SOURCE_CODE.md"
@@ -20,6 +21,25 @@ TRANSLATION_PATH = (
 PUBLIC_REPOSITORY_URL = "https://github.com/M0nsterki11/LocalFileConverter"
 PYMUPDF_LICENSE_WORDING = (
     "Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License"
+)
+UI_ICON_NAMES = (
+    "add",
+    "remove",
+    "clear",
+    "convert",
+    "cancel",
+    "settings",
+    "folder",
+    "merge",
+    "up",
+    "down",
+    "about",
+    "exit",
+    "file",
+    "files",
+    "image",
+    "pdf",
+    "office",
 )
 
 
@@ -37,6 +57,7 @@ def main() -> int:
     errors: list[str] = []
 
     _check_file(APP_ICON_PATH, errors)
+    _check_ui_icons(UI_ICON_DIRECTORY, errors)
     _check_legal_notice_files(errors)
     _check_file(TRANSLATION_PATH, errors)
     _check_file(exe_path, errors)
@@ -50,6 +71,8 @@ def main() -> int:
 
         for qss_name in ("common.qss", "light.qss", "dark.qss"):
             _check_file(resource_root / "themes" / qss_name, errors)
+
+        _check_ui_icons(resource_root / "icons", errors)
 
     translation_root = _find_translation_root(bundle_path)
 
@@ -92,6 +115,11 @@ def _check_file(path: Path, errors: list[str]) -> None:
 
     if path.is_file() and path.stat().st_size <= 0:
         errors.append(f"File is empty: {path}")
+
+
+def _check_ui_icons(icon_directory: Path, errors: list[str]) -> None:
+    for icon_name in UI_ICON_NAMES:
+        _check_file(icon_directory / f"{icon_name}.svg", errors)
 
 
 def _check_legal_notice_files(errors: list[str]) -> None:

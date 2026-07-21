@@ -1,0 +1,189 @@
+LOCAL FILE CONVERTER – UI REDESIGN PLAN
+
+CILJ
+Modernizirati postojeći PySide6 UI bez prelaska na JavaScript/Electron i bez mijenjanja postojeće poslovne logike.
+Koristimo postojeći PySide6 + vlastiti QSS.
+Redizajn se radi postupno, po 2 koraka odjednom, uz testiranje nakon svake grupe.
+
+OPĆA PRAVILA
+- Ne dirati conversion logiku ako nije nužno.
+- Ne mijenjati postojeće funkcionalnosti koje već rade.
+- Prije izmjene postojećeg UI koda pregledati trenutni sadržaj datoteka.
+- Raditi responsive layout s maksimalnom širinom glavnog sadržaja.
+- Smanjiti broj bordera i povećati whitespace.
+- Koristiti cards/sections umjesto puno tankih horizontalnih linija.
+- Zadržati dark/light theme podršku.
+- Koristiti PySide6 + QSS.
+- SVG ikone su poželjne; privremeno mogu ostati postojeće ikone ako je sigurnije.
+- Nakon svake grupe koraka pokrenuti testove i ručno provjeriti UI.
+- Nakon svake uspješne grupe napraviti Git commit.
+
+KORAK 1 – CENTRALNA MAKSIMALNA ŠIRINA I BOLJI LAYOUT
+- Glavni sadržaj ne smije biti rastegnut preko cijelog ultra-wide prozora.
+- Dodati centralni container s maksimalnom širinom približno 1100–1300 px.
+- Na većim ekranima ostaviti lijevu i desnu marginu.
+- Na manjim ekranima sadržaj se mora normalno smanjivati i ostati upotrebljiv.
+- Smanjiti osjećaj “dugih tankih crta” preko cijelog prozora.
+- Zadržati mogućnost resizeanja prozora.
+
+KORAK 2 – REDESIGN DROP FILES PODRUČJA
+- Napraviti kompaktniju, višu i vizualno jasniju drop zonu kao card.
+- U sredini:
+  - ikona datoteke
+  - “Drop files here”
+  - gumb “Choose files” / “Add files”
+  - podržani formati ispod manjim secondary tekstom
+- Ako korisnik dropa samo jednu datoteku:
+  - prikazati ikonu tipa datoteke i ime datoteke unutar drop zone ako je izvedivo bez kompliciranja logike
+- Ako je dropano više datoteka:
+  - prikazati npr. “5 files added” i generičku file ikonu
+- Ako prikaz ikone + imena unutar drop zone komplicira postojeći kod, prioritet je stabilan moderni drop-area dizajn bez toga.
+- Drop zona mora i dalje podržavati postojeći drag-and-drop behavior.
+
+KORAK 3 – AKCIJSKI GUMBI I ODABIR STAVKI
+- Primarni gumbi:
+  - Add files
+  - Merge images into PDF
+- Sekundarni:
+  - Clear all
+  - Settings
+- Remove selected prikazati/omogućiti samo kada postoji selekcija.
+- Retry failed prikazati/omogućiti samo kada postoji barem jedan failed item.
+- Dodati vizualno bolji multi-select:
+  - checkbox/kvačica na svakom file itemu ili drugi jasno vidljiv selection state
+  - korisnik mora moći označiti više datoteka
+- Selekcija mora biti vizualno jasna.
+- Ne prikazivati nepotrebne akcije kad nisu relevantne.
+
+KORAK 4 – MODERNIJI PRIKAZ FILEOVA
+- Smanjiti prenatrpanu tablicu.
+- Preferirati file rows/cards s jasnijim rasporedom:
+  - ikona
+  - ime datoteke
+  - input format
+  - veličina / broj stranica ako je dostupno
+  - output format selector
+  - status
+  - progress po stavci kada radi
+  - remove action
+- Tekst ne smije viriti izvan boxa.
+- Output format dropdown mora imati dovoljnu minimalnu širinu.
+- Dugi nazivi datoteka koristiti elide/ellipsis + tooltip s punim nazivom.
+
+KORAK 5 – DETAILS / ADVANCED OPTIONS
+- Ukloniti ili pojednostaviti stalni “Selected item” panel s Name/Path/Input format poljima.
+- Osnovne informacije trebaju biti vidljive u samom file itemu.
+- Dodati “Advanced options” / “Details” toggle.
+- Klik otvara mali expandable panel ispod odabrane stavke ili mali nenametljivi panel.
+- Tamo prikazati:
+  - full path
+  - file details
+  - format-specific options
+  - quality
+  - DPI
+  - pages
+  - druge relevantne postavke
+- Ne prikazivati opcije koje nisu relevantne za format.
+
+KORAK 6 – JASNIJI OUTPUT FORMAT
+- Output format dropdown mora biti vizualno veći i čitljiviji.
+- Preporučena visina 38–42 px.
+- Minimalna širina dovoljna za tekst bez overflowa.
+- Label “Convert to” mora biti jasna.
+- Opcije ovise o input formatu.
+- Format-specific settings prikazati samo kada su potrebne.
+
+KORAK 7 – GLAVNI CONVERT BUTTON
+- Convert All / Convert X files mora biti glavni primary CTA.
+- Veća visina i jača vizualna hijerarhija.
+- Tekst može dinamički prikazivati broj stavki, npr. “Convert 4 files”.
+- Cancel ne treba zauzimati veliki prostor kada ništa ne radi.
+- Cancel prikazati/aktivirati samo tijekom konverzije.
+- Gumb treba biti deblji i lakše uočljiv.
+
+KORAK 8 – PROGRESS SEKCIJA
+- Cijela globalna progress/status sekcija može biti skrivena kada nema aktivne konverzije.
+- Kod pokretanja konverzije prikazati:
+  - globalni progress bar
+  - postotak
+  - broj obrađenih stavki
+  - trenutnu datoteku
+  - status tekst
+  - Cancel
+- Nakon završetka može ostati kratki success/failure summary.
+- Ne ostavljati veliki prazan progress box kada aplikacija miruje.
+
+KORAK 9 – MANJE BORDERA, VIŠE CARD CONTENTA
+- Smanjiti box-within-box izgled.
+- Koristiti:
+  - background
+  - cards
+  - spacing
+  - subtle separators
+- Manje tvrdih linija.
+- Više paddinga unutar kartica.
+- Rounded corners.
+- Koristiti različite nijanse pozadine za grupiranje.
+
+KORAK 10 – TYPOGRAPHY I BUTTON SIZE
+- Povećati osnovni font.
+- Preporuka:
+  - app title 24–28 px
+  - section title 16–18 px
+  - normal text 13–14 px
+  - secondary text 11–12 px
+  - buttons 13–14 px
+- Button height približno 38–42 px.
+- Koristiti Segoe UI / system font radi Windows izgleda i jednostavnijeg bundlanja.
+- Povećati line-height/padding radi čitljivosti.
+
+KORAK 11 – IKONE
+- Postupno zamijeniti emoji ikone konzistentnim monochrome SVG ikonama.
+- Sve ikone trebaju imati isti vizualni stil.
+- Ako trenutne ikone rade i promjena bi usporila razvoj, zadržati ih privremeno i zamijeniti kasnije.
+- Prioritet su layout, čitljivost i funkcionalnost.
+
+REDOSLIJED IMPLEMENTACIJE
+Grupa A:
+1. Centralna maksimalna širina i layout
+2. Drop area redesign
+
+Grupa B:
+3. Akcijski gumbi + selection/checkbox UX
+4. Moderniji file items / tablica
+
+Grupa C:
+5. Advanced options/details
+6. Output format UX
+
+Grupa D:
+7. Primary Convert button
+8. Progress sekcija
+
+Grupa E:
+9. Manje bordera / više cards
+10. Typography i button size
+
+Grupa F:
+11. SVG ikone
++ završno responsive/polish testiranje
+
+TESTIRANJE NAKON SVAKE GRUPE
+- Pokretanje aplikacije.
+- Drag-and-drop jedne datoteke.
+- Drag-and-drop više datoteka.
+- Add files button.
+- Remove / Clear / Retry behavior.
+- Output format selection.
+- Conversion workflow.
+- Cancel behavior.
+- Dark i light theme.
+- Resize prozora.
+- Provjera da tekst ne izlazi izvan widgeta.
+- pytest.
+- git diff --check.
+
+NAPOMENA ZA CODEX
+Prije izmjene postojeće UI implementacije prvo pregledati trenutačne datoteke i arhitekturu.
+Ne prepisivati cijeli projekt niti conversion logiku.
+Raditi samo prvu sljedeću grupu (2 koraka), zatim stati i sažeti promjene.

@@ -16,6 +16,7 @@ LIBREOFFICE_CONFIG = PROJECT_ROOT / "packaging" / "libreoffice_dependency.json"
 THIRD_PARTY_NOTICES = PROJECT_ROOT / "packaging" / "THIRD_PARTY_NOTICES.txt"
 INSTALLER_SCRIPT = PROJECT_ROOT / "packaging" / "MyFileConverter.iss"
 APP_ICON_PATH = PROJECT_ROOT / "resources" / "app_icon.ico"
+UI_ICON_DIRECTORY = PROJECT_ROOT / "resources" / "icons"
 LICENSE_PATH = PROJECT_ROOT / "LICENSE"
 NOTICE_PATH = PROJECT_ROOT / "NOTICE"
 SOURCE_CODE_PATH = PROJECT_ROOT / "SOURCE_CODE.md"
@@ -46,6 +47,25 @@ PINNED_LIBREOFFICE = {
     ),
 }
 APP_ID_GUID = "2B037AD6-19DE-43D9-9976-689D3202587F"
+UI_ICON_NAMES = (
+    "add",
+    "remove",
+    "clear",
+    "convert",
+    "cancel",
+    "settings",
+    "folder",
+    "merge",
+    "up",
+    "down",
+    "about",
+    "exit",
+    "file",
+    "files",
+    "image",
+    "pdf",
+    "office",
+)
 
 
 def main() -> int:
@@ -93,6 +113,7 @@ def main() -> int:
 
     _check_legal_notice_files(errors)
     _check_non_empty_file(APP_ICON_PATH, "resources/app_icon.ico", errors)
+    _check_ui_icons(UI_ICON_DIRECTORY, errors)
     _check_non_empty_file(
         TRANSLATION_PATH,
         "translations/local_file_converter_hr.qm",
@@ -104,6 +125,7 @@ def main() -> int:
     _check_installer_setup_configuration(errors)
     _check_libreoffice_installer_flow(errors)
     _check_bundle_icon(errors)
+    _check_bundle_ui_icons(errors)
     _check_bundle_translation(errors)
 
     config_errors = validate_libreoffice_config(LIBREOFFICE_CONFIG)
@@ -142,6 +164,16 @@ def _check_non_empty_file(
         errors.append(f"{label} is empty: {path}")
 
 
+def _check_ui_icons(icon_directory: Path, errors: list[str]) -> None:
+    for icon_name in UI_ICON_NAMES:
+        path = icon_directory / f"{icon_name}.svg"
+        _check_non_empty_file(
+            path,
+            f"UI icon {icon_name}.svg",
+            errors,
+        )
+
+
 def _check_bundle_icon(errors: list[str]) -> None:
     candidates = [
         ONEDIR_BUNDLE / "_internal" / "resources" / "app_icon.ico",
@@ -158,6 +190,20 @@ def _check_bundle_icon(errors: list[str]) -> None:
             return
 
     errors.append("app_icon.ico is not included in the release ONEDIR bundle.")
+
+
+def _check_bundle_ui_icons(errors: list[str]) -> None:
+    candidates = [
+        ONEDIR_BUNDLE / "_internal" / "resources" / "icons",
+        ONEDIR_BUNDLE / "resources" / "icons",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            _check_ui_icons(candidate, errors)
+            return
+
+    errors.append("UI SVG icons are not included in the release ONEDIR bundle.")
 
 
 def _check_bundle_translation(errors: list[str]) -> None:

@@ -16,8 +16,8 @@
         <translation>Ukloni odabrano</translation>
     </message>
     <message>
-        <source>Clear list</source>
-        <translation>Očisti listu</translation>
+        <source>Clear all</source>
+        <translation>Očisti sve</translation>
     </message>
     <message>
         <source>Retry failed</source>
@@ -40,28 +40,32 @@
         <translation>Lista je prazna. Dodajte datoteke ili ih povucite u aplikaciju.</translation>
     </message>
     <message>
-        <source>Selected item</source>
-        <translation>Odabrana stavka</translation>
+        <source>Advanced options</source>
+        <translation>Napredne opcije</translation>
     </message>
     <message>
-        <source>Name:</source>
-        <translation>Naziv:</translation>
+        <source>Show or hide details and format-specific settings.</source>
+        <translation>Prikaži ili sakrij detalje i postavke specifične za format.</translation>
     </message>
     <message>
-        <source>Path:</source>
-        <translation>Putanja:</translation>
+        <source>File details</source>
+        <translation>Detalji datoteke</translation>
+    </message>
+    <message>
+        <source>Full path:</source>
+        <translation>Puna putanja:</translation>
     </message>
     <message>
         <source>Input format:</source>
         <translation>Ulazni format:</translation>
     </message>
     <message>
-        <source>Selected item settings</source>
-        <translation>Postavke odabrane stavke</translation>
+        <source>Size:</source>
+        <translation>Veličina:</translation>
     </message>
     <message>
-        <source>Output format:</source>
-        <translation>Izlazni format:</translation>
+        <source>Format options</source>
+        <translation>Opcije formata</translation>
     </message>
     <message>
         <source>Quality:</source>
@@ -132,16 +136,40 @@
         <translation>Office dokumenti mogu se pretvoriti pomoću Microsoft Officea ili LibreOfficea. Putanja za LibreOffice sprema se za korištenje kao zamjenski alat.</translation>
     </message>
     <message>
-        <source>CONVERT ALL</source>
-        <translation>PRETVORI SVE</translation>
+        <source>Convert files</source>
+        <translation>Pretvori datoteke</translation>
     </message>
     <message>
-        <source>CANCEL</source>
-        <translation>PREKINI</translation>
+        <source>Convert 1 file</source>
+        <translation>Pretvori 1 datoteku</translation>
     </message>
     <message>
-        <source>Progress and status</source>
-        <translation>Napredak i status</translation>
+        <source>Convert {count} files</source>
+        <translation>Pretvori datoteke ({count})</translation>
+    </message>
+    <message>
+        <source>Cancel conversion</source>
+        <translation>Prekini konverziju</translation>
+    </message>
+    <message>
+        <source>Progress</source>
+        <translation>Napredak</translation>
+    </message>
+    <message>
+        <source>Processed {completed} of {total} files</source>
+        <translation>Obrađeno datoteka: {completed} od {total}</translation>
+    </message>
+    <message>
+        <source>Preparing files...</source>
+        <translation>Priprema datoteka...</translation>
+    </message>
+    <message>
+        <source>Current file: {file_name}</source>
+        <translation>Trenutna datoteka: {file_name}</translation>
+    </message>
+    <message>
+        <source>Batch complete</source>
+        <translation>Grupna konverzija je završena</translation>
     </message>
     <message>
         <source>Open output folder</source>
@@ -517,7 +545,17 @@ Copyright {year}</translation>
 <context>
     <name>FileDropArea</name>
     <message><source>Drop files here</source><translation>Povucite datoteke ovdje</translation></message>
+    <message><source>Choose files</source><translation>Odaberi datoteke</translation></message>
+    <message><source>{count} files added</source><translation>Dodano: {count} datoteka</translation></message>
     <message><source>Supported formats: JPG, PNG, WEBP, PDF, DOCX, PPTX and XLSX</source><translation>Podržani formati: JPG, PNG, WEBP, PDF, DOCX, PPTX i XLSX</translation></message>
+</context>
+<context>
+    <name>ConversionItemCard</name>
+    <message><source>Convert to</source><translation>Pretvori u</translation></message>
+    <message><source>Status</source><translation>Status</translation></message>
+    <message><source>Select item for bulk actions</source><translation>Odaberi stavku za skupne radnje</translation></message>
+    <message><source>Select item</source><translation>Odaberi stavku</translation></message>
+    <message><source>Remove item</source><translation>Ukloni stavku</translation></message>
 </context>
 <context>
     <name>ConversionQueueWidget</name>

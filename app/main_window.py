@@ -3,7 +3,7 @@
 from pathlib import Path
 import time
 
-from PySide6.QtCore import QPoint, QThread, QTimer, Qt
+from PySide6.QtCore import QPoint, QSize, QThread, QTimer, Qt
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSlider,
     QVBoxLayout,
     QWidget,
@@ -66,7 +67,13 @@ from utils.libreoffice_utils import (
     get_default_libreoffice_browse_directory,
     is_valid_libreoffice_executable,
 )
-from utils.output_safety import ensure_output_directory_ready
+from utils.output_safety import (
+    ensure_output_directory_ready,
+    human_readable_size,
+)
+
+
+MAIN_CONTENT_MAX_WIDTH = 1200
 
 
 class MainWindow(QMainWindow):
@@ -108,6 +115,7 @@ class MainWindow(QMainWindow):
         self._batch_item_ids: list[str] = []
         self._batch_started_at: float | None = None
         self._closing_after_cancel = False
+        self._batch_feedback_visible = False
 
         self.setWindowTitle(APP_NAME)
         app_icon = get_app_icon()
@@ -141,13 +149,26 @@ class MainWindow(QMainWindow):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter
+            | Qt.AlignmentFlag.AlignTop
+        )
 
         content_widget = QWidget()
+        content_widget.setObjectName("mainContent")
+        content_widget.setMaximumWidth(MAIN_CONTENT_MAX_WIDTH)
+        content_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
         scroll_area.setWidget(content_widget)
         root_layout.addWidget(scroll_area)
 
+        self.main_scroll_area = scroll_area
+        self.main_content_widget = content_widget
+
         main_layout = QVBoxLayout(content_widget)
-        main_layout.setContentsMargins(32, 24, 32, 24)
+        main_layout.setContentsMargins(28, 24, 28, 24)
         main_layout.setSpacing(18)
 
         self.title_label = QLabel()
@@ -161,15 +182,26 @@ class MainWindow(QMainWindow):
         self.subtitle_label.setAlignment(
             Qt.AlignmentFlag.AlignCenter
         )
+        self.subtitle_label.setWordWrap(True)
 
-        main_layout.addWidget(self.title_label)
-        main_layout.addWidget(self.subtitle_label)
+        self.header_widget = QWidget()
+        self.header_widget.setObjectName("appHeader")
+        header_layout = QVBoxLayout(self.header_widget)
+        header_layout.setContentsMargins(0, 8, 0, 2)
+        header_layout.setSpacing(4)
+        header_layout.addWidget(self.title_label)
+        header_layout.addWidget(self.subtitle_label)
+        main_layout.addWidget(self.header_widget)
 
         self.drop_area = FileDropArea()
-        main_layout.addWidget(self.drop_area)
+        main_layout.addWidget(
+            self.drop_area,
+            alignment=Qt.AlignmentFlag.AlignHCenter,
+        )
 
-        list_button_layout = QHBoxLayout()
-        list_button_layout.setSpacing(10)
+        list_button_layout = QGridLayout()
+        list_button_layout.setHorizontalSpacing(10)
+        list_button_layout.setVerticalSpacing(10)
 
         self.add_files_button = QPushButton()
         self.add_files_button.setMinimumHeight(40)
@@ -184,15 +216,21 @@ class MainWindow(QMainWindow):
         self.settings_button = QPushButton()
         self.settings_button.setMinimumHeight(40)
 
-        for button in (
+        self.add_files_button.setProperty("actionRole", "primary")
+        self.merge_images_button.setProperty("actionRole", "primary")
+
+        self.list_button_layout = list_button_layout
+        self.list_action_buttons = (
             self.add_files_button,
-            self.remove_selected_button,
-            self.clear_list_button,
-            self.retry_failed_button,
             self.merge_images_button,
+            self.clear_list_button,
             self.settings_button,
-        ):
-            list_button_layout.addWidget(button)
+            self.remove_selected_button,
+            self.retry_failed_button,
+        )
+        self._list_action_columns = 0
+        self._list_action_layout_key = None
+        self._update_list_button_grid(self.width())
 
         main_layout.addLayout(list_button_layout)
 
@@ -206,18 +244,45 @@ class MainWindow(QMainWindow):
         queue_layout.addWidget(self.queue_widget)
         main_layout.addWidget(self.queue_group)
 
+        self.advanced_options_button = QPushButton()
+        self.advanced_options_button.setObjectName(
+            "advancedOptionsButton"
+        )
+        self.advanced_options_button.setCheckable(True)
+        self.advanced_options_button.setMinimumHeight(38)
+        self.advanced_options_button.setSizePolicy(
+            QSizePolicy.Policy.Minimum,
+            QSizePolicy.Policy.Fixed,
+        )
+        main_layout.addWidget(
+            self.advanced_options_button,
+            alignment=Qt.AlignmentFlag.AlignLeft,
+        )
+
+        self.advanced_options_container = QWidget()
+        self.advanced_options_container.setObjectName(
+            "advancedOptionsContainer"
+        )
+        advanced_options_layout = QVBoxLayout(
+            self.advanced_options_container
+        )
+        advanced_options_layout.setContentsMargins(0, 0, 0, 0)
+        advanced_options_layout.setSpacing(12)
+        self.advanced_options_container.hide()
+        main_layout.addWidget(self.advanced_options_container)
+
         self.file_group = QGroupBox()
         file_layout = QGridLayout(self.file_group)
         file_layout.setHorizontalSpacing(16)
         file_layout.setVerticalSpacing(10)
 
-        self.file_name_label = QLabel()
-        self.file_name_label.setObjectName("valueLabel")
-        self.file_name_label.setWordWrap(True)
-
         self.file_path_label = QLabel("-")
         self.file_path_label.setObjectName("pathLabel")
         self.file_path_label.setWordWrap(True)
+        self.file_path_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self.file_path_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
@@ -225,27 +290,33 @@ class MainWindow(QMainWindow):
         self.input_format_label = QLabel("-")
         self.input_format_label.setObjectName("valueLabel")
 
-        self.file_name_title_label = QLabel()
         self.file_path_title_label = QLabel()
         self.input_format_title_label = QLabel()
+        self.file_size_title_label = QLabel()
+        self.file_size_label = QLabel("-")
+        self.file_size_label.setObjectName("valueLabel")
 
-        file_layout.addWidget(self.file_name_title_label, 0, 0)
-        file_layout.addWidget(self.file_name_label, 0, 1)
-        file_layout.addWidget(self.file_path_title_label, 1, 0)
-        file_layout.addWidget(self.file_path_label, 1, 1)
-        file_layout.addWidget(self.input_format_title_label, 2, 0)
-        file_layout.addWidget(self.input_format_label, 2, 1)
+        file_layout.addWidget(self.file_path_title_label, 0, 0)
+        file_layout.addWidget(self.file_path_label, 0, 1)
+        file_layout.addWidget(self.input_format_title_label, 1, 0)
+        file_layout.addWidget(self.input_format_label, 1, 1)
+        file_layout.addWidget(self.file_size_title_label, 2, 0)
+        file_layout.addWidget(self.file_size_label, 2, 1)
         file_layout.setColumnStretch(1, 1)
-        main_layout.addWidget(self.file_group)
+        advanced_options_layout.addWidget(self.file_group)
 
         self.conversion_group = QGroupBox()
         conversion_layout = QGridLayout(self.conversion_group)
         conversion_layout.setHorizontalSpacing(16)
         conversion_layout.setVerticalSpacing(12)
 
-        self.output_format_label = QLabel()
-        self.output_format_combo = QComboBox()
+        # The queue card is the visible format selector. This synchronized
+        # control keeps the existing item-settings signal flow intact.
+        self.output_format_label = QLabel(self.conversion_group)
+        self.output_format_combo = QComboBox(self.conversion_group)
         self.output_format_combo.setMinimumHeight(38)
+        self.output_format_label.hide()
+        self.output_format_combo.hide()
 
         self.quality_label = QLabel()
         self.quality_slider = QSlider(
@@ -311,11 +382,18 @@ class MainWindow(QMainWindow):
         self.dpi_combo.setMinimumHeight(38)
 
         self.output_directory_title_label = QLabel()
+        self.output_directory_title_label.setObjectName(
+            "outputFolderCaption"
+        )
         self.output_directory_label = QLabel()
         self.output_directory_label.setObjectName(
             "pathLabel"
         )
         self.output_directory_label.setWordWrap(True)
+        self.output_directory_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self.output_directory_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
@@ -324,75 +402,64 @@ class MainWindow(QMainWindow):
         self.select_output_button.setMinimumHeight(38)
 
         conversion_layout.addWidget(
-            self.output_format_label,
-            0,
-            0,
-        )
-        conversion_layout.addWidget(
-            self.output_format_combo,
-            0,
-            1,
-            1,
-            2,
-        )
-        conversion_layout.addWidget(
             self.quality_label,
-            1,
+            0,
             0,
         )
         conversion_layout.addWidget(
             self.quality_slider,
-            1,
+            0,
             1,
         )
         conversion_layout.addWidget(
             self.quality_value_label,
-            1,
+            0,
             2,
         )
         conversion_layout.addWidget(
             self.page_mode_label,
-            2,
+            1,
             0,
         )
         conversion_layout.addWidget(
             self.page_mode_combo,
-            2,
+            1,
             1,
         )
         conversion_layout.addWidget(
             self.page_range_input,
-            2,
+            1,
             2,
         )
         conversion_layout.addWidget(
             self.multi_page_output_label,
-            3,
+            2,
             0,
         )
         conversion_layout.addWidget(
             self.multi_page_output_combo,
-            3,
+            2,
             1,
             1,
             2,
         )
         conversion_layout.addWidget(
             self.dpi_label,
-            4,
+            3,
             0,
         )
         conversion_layout.addWidget(
             self.dpi_combo,
-            4,
+            3,
             1,
             1,
             2,
         )
         conversion_layout.setColumnStretch(1, 1)
-        main_layout.addWidget(self.conversion_group)
+        advanced_options_layout.addWidget(self.conversion_group)
 
         self.output_group = QGroupBox()
+        self.output_group.setObjectName("outputCard")
         output_layout = QGridLayout(self.output_group)
         output_layout.setHorizontalSpacing(16)
         output_layout.setVerticalSpacing(10)
@@ -470,40 +537,87 @@ class MainWindow(QMainWindow):
         libreoffice_layout.setColumnStretch(1, 1)
         main_layout.addWidget(self.libreoffice_group)
 
-        action_button_layout = QHBoxLayout()
-        action_button_layout.setSpacing(12)
+        self.conversion_action_container = QWidget()
+        self.conversion_action_container.setObjectName(
+            "conversionActionContainer"
+        )
+        conversion_action_layout = QVBoxLayout(
+            self.conversion_action_container
+        )
+        conversion_action_layout.setContentsMargins(0, 0, 0, 0)
+        conversion_action_layout.setSpacing(8)
+
+        self.status_panel = QFrame()
+        self.status_panel.setObjectName("statusCard")
+        status_panel_layout = QHBoxLayout(self.status_panel)
+        status_panel_layout.setContentsMargins(14, 10, 14, 10)
+
+        self.idle_status_label = QLabel()
+        self.idle_status_label.setObjectName("idleStatusLabel")
+        self.idle_status_label.setWordWrap(True)
+        status_panel_layout.addWidget(self.idle_status_label)
+        conversion_action_layout.addWidget(self.status_panel)
+
         self.convert_button = QPushButton()
         self.convert_button.setObjectName("convertButton")
-        self.convert_button.setMinimumHeight(50)
-
-        self.cancel_button = QPushButton()
-        self.cancel_button.setObjectName("cancelButton")
-        self.cancel_button.setMinimumHeight(50)
-        self.cancel_button.setEnabled(False)
-
-        action_button_layout.addWidget(
-            self.convert_button,
-            stretch=3,
-        )
-        action_button_layout.addWidget(
-            self.cancel_button,
-            stretch=1,
-        )
-        main_layout.addLayout(action_button_layout)
+        self.convert_button.setMinimumHeight(56)
+        conversion_action_layout.addWidget(self.convert_button)
+        main_layout.addWidget(self.conversion_action_container)
 
         self.progress_group = QGroupBox()
         progress_layout = QVBoxLayout(self.progress_group)
+        progress_layout.setSpacing(10)
+
+        progress_header_layout = QHBoxLayout()
+        self.progress_summary_label = QLabel()
+        self.progress_summary_label.setObjectName(
+            "progressSummaryLabel"
+        )
+        self.progress_percent_label = QLabel("0%")
+        self.progress_percent_label.setObjectName(
+            "progressPercentLabel"
+        )
+        self.progress_percent_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight
+            | Qt.AlignmentFlag.AlignVCenter
+        )
+        progress_header_layout.addWidget(
+            self.progress_summary_label,
+            stretch=1,
+        )
+        progress_header_layout.addWidget(
+            self.progress_percent_label
+        )
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(False)
+
+        self.current_file_label = QLabel()
+        self.current_file_label.setObjectName("currentFileLabel")
+        self.current_file_label.setWordWrap(True)
+
+        self.cancel_button = QPushButton()
+        self.cancel_button.setObjectName("cancelButton")
+        self.cancel_button.setMinimumHeight(40)
+        self.cancel_button.setMaximumWidth(210)
+        self.cancel_button.setEnabled(False)
 
         self.status_label = QLabel()
-        self.status_label.setObjectName("statusLabel")
+        self.status_label.setObjectName("progressStatusLabel")
         self.status_label.setWordWrap(True)
 
+        cancel_layout = QHBoxLayout()
+        cancel_layout.addStretch()
+        cancel_layout.addWidget(self.cancel_button)
+
+        progress_layout.addLayout(progress_header_layout)
         progress_layout.addWidget(self.progress_bar)
+        progress_layout.addWidget(self.current_file_label)
         progress_layout.addWidget(self.status_label)
+        progress_layout.addLayout(cancel_layout)
+        self.progress_group.hide()
         main_layout.addWidget(self.progress_group)
 
         self.open_output_button = QPushButton()
@@ -589,27 +703,52 @@ class MainWindow(QMainWindow):
         self.help_menu.addAction(self.about_action)
 
     def _apply_icons_and_tooltips(self) -> None:
-        self.add_files_button.setIcon(get_icon(self, "add"))
-        self.remove_selected_button.setIcon(get_icon(self, "remove"))
-        self.clear_list_button.setIcon(get_icon(self, "clear"))
-        self.retry_failed_button.setIcon(get_icon(self, "convert"))
-        self.merge_images_button.setIcon(get_icon(self, "merge"))
-        self.settings_button.setIcon(get_icon(self, "settings"))
-        self.convert_button.setIcon(get_icon(self, "convert"))
-        self.cancel_button.setIcon(get_icon(self, "cancel"))
-        self.open_output_button.setIcon(get_icon(self, "folder"))
-        self.select_output_button.setIcon(get_icon(self, "folder"))
+        icon_assignments = (
+            (self.add_files_button, "add"),
+            (self.remove_selected_button, "remove"),
+            (self.clear_list_button, "clear"),
+            (self.retry_failed_button, "convert"),
+            (self.merge_images_button, "merge"),
+            (self.settings_button, "settings"),
+            (self.convert_button, "convert"),
+            (self.cancel_button, "cancel"),
+            (self.open_output_button, "folder"),
+            (self.select_output_button, "folder"),
+        )
+
+        for button, icon_name in icon_assignments:
+            button.setIcon(get_icon(button, icon_name))
+            button.setIconSize(QSize(18, 18))
+
+        action_assignments = (
+            ("add_files_action", "add"),
+            ("change_output_action", "folder"),
+            ("exit_action", "exit"),
+            ("merge_images_action", "merge"),
+            ("settings_action", "settings"),
+            ("about_action", "about"),
+        )
+
+        for attribute_name, icon_name in action_assignments:
+            action = getattr(self, attribute_name, None)
+
+            if action is not None:
+                action.setIcon(get_icon(self, icon_name))
+
+        self.drop_area.refresh_icons()
+        self.queue_widget.refresh_icons()
+        self._update_advanced_options_icon()
 
     def retranslate_ui(self, *_args) -> None:
         self.setWindowTitle(APP_NAME)
-        self.title_label.setText("LOCAL FILE CONVERTER")
+        self.title_label.setText(APP_NAME)
         self.subtitle_label.setText(
             self.tr("Convert files locally, without sending data to the internet")
         )
 
         self.add_files_button.setText(self.tr("Add files"))
         self.remove_selected_button.setText(self.tr("Remove selected"))
-        self.clear_list_button.setText(self.tr("Clear list"))
+        self.clear_list_button.setText(self.tr("Clear all"))
         self.retry_failed_button.setText(self.tr("Retry failed"))
         self.merge_images_button.setText(self.tr("Merge images into one PDF"))
         self.settings_button.setText(self.tr("Settings"))
@@ -618,12 +757,15 @@ class MainWindow(QMainWindow):
         self.empty_queue_label.setText(
             self.tr("The list is empty. Add files or drop them into the application.")
         )
-        self.file_group.setTitle(self.tr("Selected item"))
-        self.file_name_title_label.setText(self.tr("Name:"))
-        self.file_path_title_label.setText(self.tr("Path:"))
+        self.advanced_options_button.setText(self.tr("Advanced options"))
+        self.advanced_options_button.setToolTip(
+            self.tr("Show or hide details and format-specific settings.")
+        )
+        self.file_group.setTitle(self.tr("File details"))
+        self.file_path_title_label.setText(self.tr("Full path:"))
         self.input_format_title_label.setText(self.tr("Input format:"))
-        self.conversion_group.setTitle(self.tr("Selected item settings"))
-        self.output_format_label.setText(self.tr("Output format:"))
+        self.file_size_title_label.setText(self.tr("Size:"))
+        self.conversion_group.setTitle(self.tr("Format options"))
         self.quality_label.setText(self.tr("Quality:"))
         self.page_mode_label.setText(self.tr("PDF pages:"))
         self.page_mode_combo.setItemText(0, self.tr("All pages"))
@@ -651,9 +793,9 @@ class MainWindow(QMainWindow):
             )
         )
 
-        self.convert_button.setText(self.tr("CONVERT ALL"))
-        self.cancel_button.setText(self.tr("CANCEL"))
-        self.progress_group.setTitle(self.tr("Progress and status"))
+        self._update_convert_button_text()
+        self.cancel_button.setText(self.tr("Cancel conversion"))
+        self.progress_group.setTitle(self.tr("Progress"))
         self.open_output_button.setText(self.tr("Open output folder"))
 
         self.file_menu.setTitle(self.tr("File"))
@@ -698,11 +840,10 @@ class MainWindow(QMainWindow):
         self.drop_area.retranslate_ui()
         self.queue_widget.retranslate_ui()
 
-        if self.active_item_id is None:
-            self.file_name_label.setText(self.tr("No file selected"))
-
         if not self.is_converting and not self.items:
-            self.status_label.setText(self.tr("Status: Add files to start."))
+            self._set_status_message(
+                self.tr("Status: Add files to start.")
+            )
 
         if self.libreoffice_path is None:
             self.libreoffice_path_input.setPlaceholderText(
@@ -711,6 +852,9 @@ class MainWindow(QMainWindow):
 
     def _connect_signals(self) -> None:
         self.add_files_button.clicked.connect(
+            self._select_files
+        )
+        self.drop_area.choose_files_requested.connect(
             self._select_files
         )
         self.drop_area.files_dropped.connect(self._add_files)
@@ -732,11 +876,17 @@ class MainWindow(QMainWindow):
         self.queue_widget.selection_changed.connect(
             self._queue_selection_changed
         )
+        self.queue_widget.selection_state_changed.connect(
+            self._update_controls
+        )
         self.queue_widget.output_format_changed.connect(
             self._queue_output_format_changed
         )
         self.queue_widget.remove_requested.connect(
             self._remove_item_by_id
+        )
+        self.advanced_options_button.toggled.connect(
+            self._toggle_advanced_options
         )
 
         self.select_output_button.clicked.connect(
@@ -810,12 +960,13 @@ class MainWindow(QMainWindow):
 
         self.items.extend(result.added_items)
         self.queue_widget.set_items(self.items)
+        self._refresh_drop_area()
 
         if result.added_items:
             self.queue_widget.set_current_item_id(
                 result.added_items[0].unique_id
             )
-            self.status_label.setText(
+            self._set_status_message(
                 self.tr("Status: Added items: {count}").format(
                     count=len(result.added_items),
                 )
@@ -885,6 +1036,7 @@ class MainWindow(QMainWindow):
             if item.unique_id not in selected_ids
         ]
         self.queue_widget.set_items(self.items)
+        self._refresh_drop_area()
         self._load_active_item(self.queue_widget.current_item_id())
         self._update_controls()
 
@@ -898,6 +1050,7 @@ class MainWindow(QMainWindow):
             if item.unique_id != item_id
         ]
         self.queue_widget.set_items(self.items)
+        self._refresh_drop_area()
         self._load_active_item(self.queue_widget.current_item_id())
         self._update_controls()
 
@@ -907,9 +1060,12 @@ class MainWindow(QMainWindow):
 
         self.items.clear()
         self.queue_widget.set_items(self.items)
+        self._refresh_drop_area()
         self._load_active_item(None)
         self.progress_bar.setValue(0)
-        self.status_label.setText(self.tr("Status: The list was cleared."))
+        self._set_status_message(
+            self.tr("Status: The list was cleared.")
+        )
         self._update_controls()
 
     def _retry_failed_items(self) -> None:
@@ -922,6 +1078,57 @@ class MainWindow(QMainWindow):
                 self.queue_widget.update_item(item)
 
         self._update_controls()
+
+    def _refresh_drop_area(self) -> None:
+        self.drop_area.set_files(
+            [item.input_path for item in self.items]
+        )
+
+    def _update_list_button_grid(self, available_width: int) -> None:
+        column_count = 2 if available_width < 900 else 3
+        contextual_buttons = {
+            self.remove_selected_button,
+            self.retry_failed_button,
+        }
+
+        for button in self.list_action_buttons:
+            if button not in contextual_buttons:
+                button.setVisible(True)
+
+        visible_buttons = tuple(
+            button
+            for button in self.list_action_buttons
+            if (
+                button not in contextual_buttons
+                or not button.isHidden()
+            )
+        )
+        layout_key = (
+            column_count,
+            tuple(id(button) for button in visible_buttons),
+        )
+
+        if layout_key == self._list_action_layout_key:
+            return
+
+        for button in self.list_action_buttons:
+            self.list_button_layout.removeWidget(button)
+
+        for index, button in enumerate(visible_buttons):
+            self.list_button_layout.addWidget(
+                button,
+                index // column_count,
+                index % column_count,
+            )
+
+        for column in range(3):
+            self.list_button_layout.setColumnStretch(
+                column,
+                1 if column < column_count else 0,
+            )
+
+        self._list_action_columns = column_count
+        self._list_action_layout_key = layout_key
 
     def _open_merge_images_dialog(self) -> None:
         dialog = MergeImagesDialog(
@@ -961,6 +1168,7 @@ class MainWindow(QMainWindow):
                 app,
                 self.app_settings.theme,
             )
+            self._apply_icons_and_tooltips()
 
         self.output_directory = (
             self.app_settings.default_output_directory
@@ -972,7 +1180,9 @@ class MainWindow(QMainWindow):
                 item.output_directory = self.output_directory
 
         self._refresh_libreoffice_ui()
-        self.status_label.setText(self.tr("Status: Settings were saved."))
+        self._set_status_message(
+            self.tr("Status: Settings were saved.")
+        )
 
     def _open_about_dialog(self) -> None:
         AboutDialog(self).exec()
@@ -986,9 +1196,10 @@ class MainWindow(QMainWindow):
         self._loading_item_controls = True
 
         if item is None:
-            self.file_name_label.setText(self.tr("No file selected"))
             self.file_path_label.setText("-")
+            self.file_path_label.setToolTip("")
             self.input_format_label.setText("-")
+            self.file_size_label.setText("-")
             self.output_format_combo.clear()
             self.quality_slider.setValue(
                 self.app_settings.default_image_quality
@@ -1007,9 +1218,16 @@ class MainWindow(QMainWindow):
                 self.app_settings.default_multi_page_output_mode,
             )
         else:
-            self.file_name_label.setText(item.input_path.name)
             self.file_path_label.setText(str(item.input_path))
+            self.file_path_label.setToolTip(str(item.input_path))
             self.input_format_label.setText(item.input_format)
+            try:
+                file_size = human_readable_size(
+                    item.input_path.stat().st_size
+                )
+            except OSError:
+                file_size = "-"
+            self.file_size_label.setText(file_size)
 
             self.output_format_combo.clear()
             self.output_format_combo.addItems(
@@ -1045,6 +1263,22 @@ class MainWindow(QMainWindow):
         self._update_context_controls()
         self._update_controls()
 
+    def _toggle_advanced_options(self, expanded: bool) -> None:
+        has_active = self._active_item() is not None
+        self.advanced_options_container.setVisible(
+            expanded and has_active
+        )
+        self._update_advanced_options_icon()
+
+    def _update_advanced_options_icon(self) -> None:
+        icon_name = (
+            "up" if self.advanced_options_button.isChecked() else "down"
+        )
+        self.advanced_options_button.setIcon(
+            get_icon(self.advanced_options_button, icon_name)
+        )
+        self.advanced_options_button.setIconSize(QSize(18, 18))
+
     def _select_output_directory(self) -> None:
         selected_directory = QFileDialog.getExistingDirectory(
             self,
@@ -1066,7 +1300,7 @@ class MainWindow(QMainWindow):
             if item.status == ConversionStatus.PENDING:
                 item.output_directory = self.output_directory
 
-        self.status_label.setText(
+        self._set_status_message(
             self.tr("Status: Output folder was changed.")
         )
 
@@ -1194,7 +1428,7 @@ class MainWindow(QMainWindow):
         self.libreoffice_path = detected_path
         save_libreoffice_path(detected_path)
         self._refresh_libreoffice_ui()
-        self.status_label.setText(
+        self._set_status_message(
             self.tr("Status: LibreOffice was found successfully.")
         )
 
@@ -1243,7 +1477,7 @@ class MainWindow(QMainWindow):
         self.libreoffice_path = selected_path.resolve()
         save_libreoffice_path(self.libreoffice_path)
         self._refresh_libreoffice_ui()
-        self.status_label.setText(
+        self._set_status_message(
             self.tr("Status: LibreOffice path was saved.")
         )
 
@@ -1298,6 +1532,9 @@ class MainWindow(QMainWindow):
         self.dpi_combo.setVisible(pdf_input)
         self.multi_page_output_label.setVisible(pdf_input)
         self.multi_page_output_combo.setVisible(pdf_input)
+        self.conversion_group.setVisible(
+            item is not None and (quality_visible or pdf_input)
+        )
         self.libreoffice_group.setVisible(office_input)
 
     def _update_controls(self) -> None:
@@ -1314,6 +1551,14 @@ class MainWindow(QMainWindow):
         self.add_files_button.setEnabled(not self.is_converting)
         self.drop_area.setEnabled(not self.is_converting)
         self.empty_queue_label.setVisible(not has_items)
+        self.queue_widget.setVisible(has_items)
+        if not has_active and self.advanced_options_button.isChecked():
+            self.advanced_options_button.setChecked(False)
+        self.advanced_options_button.setVisible(has_active)
+        self.advanced_options_container.setVisible(
+            has_active and self.advanced_options_button.isChecked()
+        )
+        self.remove_selected_button.setVisible(bool(selected_ids))
         self.remove_selected_button.setEnabled(
             not self.is_converting and bool(selected_ids)
         )
@@ -1323,12 +1568,15 @@ class MainWindow(QMainWindow):
         self.retry_failed_button.setEnabled(
             not self.is_converting and bool(failed_items)
         )
+        self.retry_failed_button.setVisible(bool(failed_items))
         self.merge_images_button.setEnabled(not self.is_converting)
         self.settings_button.setEnabled(not self.is_converting)
         self.convert_button.setEnabled(
             not self.is_converting and bool(runnable_items)
         )
         self.cancel_button.setEnabled(self.is_converting)
+        self._update_convert_button_text(len(runnable_items))
+        self._update_feedback_visibility()
 
         settings_enabled = (
             has_active and not self.is_converting
@@ -1347,6 +1595,7 @@ class MainWindow(QMainWindow):
             not self.is_converting
         )
         self.queue_widget.set_locked(self.is_converting)
+        self._update_list_button_grid(self.width())
 
         if hasattr(self, "add_files_action"):
             self.add_files_action.setEnabled(not self.is_converting)
@@ -1365,7 +1614,7 @@ class MainWindow(QMainWindow):
         runnable_items = self._runnable_items()
 
         if not runnable_items:
-            self.status_label.setText(
+            self._set_status_message(
                 self.tr("Status: There are no items ready for processing.")
             )
             return
@@ -1390,8 +1639,12 @@ class MainWindow(QMainWindow):
             for item in runnable_items
         ]
         self.progress_bar.setValue(0)
-        self.status_label.setText(
-            self.tr("Status: Starting batch conversion...")
+        self.current_file_label.setText(self.tr("Preparing files..."))
+        self.current_file_label.setToolTip("")
+        self._update_batch_progress()
+        self._set_status_message(
+            self.tr("Status: Starting batch conversion..."),
+            batch=True,
         )
         self._set_conversion_running(True)
 
@@ -1453,16 +1706,18 @@ class MainWindow(QMainWindow):
 
         self.cancel_requested = True
         self.cancel_button.setEnabled(False)
-        self.status_label.setText(
-            self.tr("Status: Cancelling batch conversion...")
+        self._set_status_message(
+            self.tr("Status: Cancelling batch conversion..."),
+            batch=True,
         )
         # The UI remains responsive while the worker reaches its next safe
         # cancellation checkpoint and removes any unpublished output.
         self.batch_worker.cancel()
 
     def _batch_started(self) -> None:
-        self.status_label.setText(
-            self.tr("Status: Batch conversion has started.")
+        self._set_status_message(
+            self.tr("Status: Batch conversion has started."),
+            batch=True,
         )
 
     def _item_started(self, item_id: str) -> None:
@@ -1477,10 +1732,17 @@ class MainWindow(QMainWindow):
         item.result_path = None
         self.queue_widget.update_item(item)
         self.queue_widget.set_current_item_id(item_id)
-        self.status_label.setText(
-            self.tr("Status: Converting {file_name}...").format(
+        self.current_file_label.setText(
+            self.tr("Current file: {file_name}").format(
                 file_name=item.input_path.name,
             )
+        )
+        self.current_file_label.setToolTip(str(item.input_path))
+        self._set_status_message(
+            self.tr("Status: Converting {file_name}...").format(
+                file_name=item.input_path.name,
+            ),
+            batch=True,
         )
 
     def _item_progress_changed(
@@ -1511,11 +1773,12 @@ class MainWindow(QMainWindow):
         self.queue_widget.update_item(item)
 
         if item.unique_id == self.active_item_id:
-            self.status_label.setText(
+            self._set_status_message(
                 self.tr("Status: {file_name}: {message}").format(
                     file_name=item.input_path.name,
                     message=message,
-                )
+                ),
+                batch=True,
             )
 
     def _item_finished(
@@ -1569,8 +1832,9 @@ class MainWindow(QMainWindow):
         self._update_batch_progress()
 
     def _batch_cancelled(self) -> None:
-        self.status_label.setText(
-            self.tr("Status: Batch conversion was cancelled.")
+        self._set_status_message(
+            self.tr("Status: Batch conversion was cancelled."),
+            batch=True,
         )
 
     def _batch_finished(
@@ -1586,7 +1850,17 @@ class MainWindow(QMainWindow):
             else 0.0
         )
         self.progress_bar.setValue(100)
-        self.status_label.setText(
+        total_count = success_count + failed_count + cancelled_count
+        self.progress_summary_label.setText(
+            self.tr("Processed {completed} of {total} files").format(
+                completed=total_count,
+                total=total_count,
+            )
+        )
+        self.progress_percent_label.setText("100%")
+        self.current_file_label.setText(self.tr("Batch complete"))
+        self.current_file_label.setToolTip("")
+        self._set_status_message(
             self.tr(
                 "Conversion finished:\n"
                 "- Successful: {success_count}\n"
@@ -1598,7 +1872,8 @@ class MainWindow(QMainWindow):
                 failed_count=failed_count,
                 cancelled_count=cancelled_count,
                 duration_seconds=duration_seconds,
-            )
+            ),
+            batch=True,
         )
 
         if (
@@ -1650,6 +1925,53 @@ class MainWindow(QMainWindow):
         self.is_converting = running
         self._update_controls()
 
+    def _set_status_message(
+        self,
+        message: str,
+        *,
+        batch: bool = False,
+    ) -> None:
+        self.status_label.setText(message)
+        self.idle_status_label.setText(message)
+
+        if batch:
+            self._batch_feedback_visible = True
+        elif not self.is_converting:
+            self._batch_feedback_visible = False
+
+        self._update_feedback_visibility()
+
+    def _update_feedback_visibility(self) -> None:
+        show_progress = (
+            self.is_converting or self._batch_feedback_visible
+        )
+        self.progress_group.setVisible(show_progress)
+        self.status_panel.setVisible(not show_progress)
+        self.idle_status_label.setVisible(not show_progress)
+        self.convert_button.setVisible(not self.is_converting)
+        self.cancel_button.setVisible(self.is_converting)
+
+    def _update_convert_button_text(
+        self,
+        runnable_count: int | None = None,
+    ) -> None:
+        count = (
+            len(self._runnable_items())
+            if runnable_count is None
+            else runnable_count
+        )
+
+        if count == 1:
+            text = self.tr("Convert 1 file")
+        elif count > 1:
+            text = self.tr("Convert {count} files").format(
+                count=count
+            )
+        else:
+            text = self.tr("Convert files")
+
+        self.convert_button.setText(text)
+
     def _update_batch_progress(self) -> None:
         if not self._batch_item_ids:
             return
@@ -1664,8 +1986,23 @@ class MainWindow(QMainWindow):
             return
 
         total_progress = sum(item.progress for item in batch_items)
-        self.progress_bar.setValue(
-            int(total_progress / len(batch_items))
+        progress = int(total_progress / len(batch_items))
+        completed_count = sum(
+            item.status
+            in {
+                ConversionStatus.SUCCESS,
+                ConversionStatus.FAILED,
+                ConversionStatus.CANCELLED,
+            }
+            for item in batch_items
+        )
+        self.progress_bar.setValue(progress)
+        self.progress_percent_label.setText(f"{progress}%")
+        self.progress_summary_label.setText(
+            self.tr("Processed {completed} of {total} files").format(
+                completed=completed_count,
+                total=len(batch_items),
+            )
         )
 
     def _runnable_items(self) -> list[ConversionItem]:
@@ -1769,8 +2106,11 @@ class MainWindow(QMainWindow):
 
             if message_box.clickedButton() == stop_button:
                 self._closing_after_cancel = True
-                self.status_label.setText(
-                    self.tr("Status: Cancelling conversion and closing the application...")
+                self._set_status_message(
+                    self.tr(
+                        "Status: Cancelling conversion and closing the application..."
+                    ),
+                    batch=True,
                 )
                 self._cancel_conversion()
 
@@ -1782,3 +2122,9 @@ class MainWindow(QMainWindow):
             self.saveState(),
         )
         event.accept()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+
+        if hasattr(self, "list_button_layout"):
+            self._update_list_button_grid(event.size().width())

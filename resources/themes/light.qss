@@ -1,8 +1,14 @@
-QWidget,
 QMainWindow,
 QDialog {
     background-color: #f4f6f8;
+}
+
+QWidget {
     color: #1f2933;
+}
+
+QWidget#mainContent {
+    background-color: #f4f6f8;
 }
 
 QLabel#mainTitle {
@@ -13,6 +19,30 @@ QLabel#subtitle,
 QLabel#dropDescription,
 QLabel#pathLabel {
     color: #5f6f7f;
+}
+
+QLabel#dropMetadata {
+    color: #425466;
+}
+
+QLabel#queueItemMetadata,
+QLabel#queueItemResult,
+QLabel#queueItemCaption {
+    color: #5f6f7f;
+}
+
+QFrame#conversionItemCard {
+    background-color: #f8fafc;
+    border-color: #d8dee4;
+}
+
+QFrame#conversionItemCard[active="true"] {
+    border-color: #7ca8d6;
+}
+
+QFrame#conversionItemCard[selected="true"] {
+    background-color: #eaf3ff;
+    border-color: #2878d0;
 }
 
 QLabel#emptyStateLabel {
@@ -37,15 +67,40 @@ QLabel#dropTitle {
 }
 
 QGroupBox,
-QTableWidget,
-QLabel#statusLabel {
+QTableWidget {
     background-color: #ffffff;
     border: 1px solid #d8dee4;
+}
+
+QLabel#idleStatusLabel,
+QLabel#progressStatusLabel,
+QLabel#currentFileLabel {
+    color: #5f6f7f;
+}
+
+QLabel#progressSummaryLabel,
+QLabel#progressPercentLabel {
+    color: #26323f;
 }
 
 QGroupBox::title {
     background-color: #ffffff;
     color: #26323f;
+}
+
+QWidget#mainContent QGroupBox#outputCard {
+    background-color: #f8fafc;
+    border-color: #d8dee4;
+}
+
+QWidget#mainContent QGroupBox#outputCard::title {
+    background-color: #f8fafc;
+    color: #26323f;
+}
+
+QFrame#statusCard {
+    background-color: #eef2f6;
+    border-color: #d8dee4;
 }
 
 QPushButton {
@@ -77,23 +132,53 @@ QPushButton:disabled {
     border-color: #d4dae0;
 }
 
-QPushButton#convertButton {
+QPushButton#convertButton,
+QPushButton#dropChooseButton,
+QPushButton[actionRole="primary"] {
     background-color: #2878d0;
     color: #ffffff;
     border: none;
 }
 
-QPushButton#convertButton:hover {
+QPushButton#convertButton:hover,
+QPushButton#dropChooseButton:hover,
+QPushButton[actionRole="primary"]:hover {
     background-color: #2069b8;
 }
 
-QPushButton#convertButton:pressed {
+QPushButton#convertButton:pressed,
+QPushButton#dropChooseButton:pressed,
+QPushButton[actionRole="primary"]:pressed {
     background-color: #195896;
 }
 
-QPushButton#convertButton:disabled {
+QPushButton#convertButton:disabled,
+QPushButton#dropChooseButton:disabled,
+QPushButton[actionRole="primary"]:disabled {
     background-color: #aab7c4;
     color: #edf1f4;
+}
+
+QPushButton#itemRemoveButton {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+QPushButton#itemRemoveButton:hover {
+    background-color: #fee4e2;
+    border-color: #f3b7b2;
+}
+
+QPushButton#advancedOptionsButton {
+    background-color: transparent;
+    border-color: transparent;
+    color: #1f5f9f;
+}
+
+QPushButton#advancedOptionsButton:hover,
+QPushButton#advancedOptionsButton:checked {
+    background-color: #eaf3ff;
+    border-color: #b9d5f2;
 }
 
 QPushButton#cancelButton {

@@ -9,12 +9,17 @@ QDialog {
 }
 
 QLabel#mainTitle {
-    font-size: 26px;
-    font-weight: 700;
+    font-size: 38px;
+    font-weight: 800;
 }
 
 QLabel#subtitle {
     font-size: 14px;
+}
+
+QWidget#appHeader,
+QWidget#conversionActionContainer {
+    background-color: transparent;
 }
 
 QLabel#valueLabel {
@@ -32,31 +37,150 @@ QLabel#emptyStateLabel {
 }
 
 QFrame#dropArea {
-    border-width: 2px;
+    border-width: 1px;
     border-style: dashed;
     border-radius: 8px;
 }
 
 QLabel#dropTitle {
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+QLabel#dropMetadata {
+    font-size: 13px;
     font-weight: 600;
+}
+
+QLabel#dropDescription {
+    font-size: 12px;
+}
+
+QPushButton#dropChooseButton {
+    min-width: 132px;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+QPushButton[actionRole="primary"] {
+    font-weight: 700;
+}
+
+QFrame#conversionItemCard {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 8px;
+}
+
+QLabel#queueItemName {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+QLabel#queueItemMetadata,
+QLabel#queueItemResult,
+QLabel#queueItemCaption {
+    font-size: 12px;
+}
+
+QLabel#queueItemCaption {
+    font-weight: 600;
+}
+
+QLabel#queueItemStatus {
+    font-weight: 700;
+}
+
+QComboBox#queueItemOutputCombo {
+    min-width: 150px;
+}
+
+QPushButton#advancedOptionsButton {
+    min-width: 180px;
+    padding-left: 12px;
+    padding-right: 14px;
+    text-align: left;
+}
+
+QWidget#advancedOptionsContainer {
+    background-color: transparent;
+}
+
+QPushButton#itemRemoveButton {
+    min-width: 38px;
+    max-width: 38px;
+    padding: 0;
+}
+
+QProgressBar#itemProgress {
+    min-height: 18px;
+    max-height: 18px;
+}
+
+QScrollArea#queueScrollArea,
+QWidget#queueItemsContainer {
+    background-color: transparent;
 }
 
 QGroupBox {
     border-radius: 8px;
     margin-top: 12px;
     padding: 14px;
-    font-weight: 600;
 }
 
 QGroupBox::title {
     left: 12px;
     padding: 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+QWidget#mainContent QGroupBox {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    margin-top: 18px;
+    padding: 12px 0 0 0;
+    font-weight: 400;
+}
+
+QWidget#mainContent QGroupBox::title {
+    background-color: transparent;
+    left: 0;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QWidget#mainContent QGroupBox#outputCard {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 8px;
+    margin-top: 14px;
+    padding: 18px 16px 15px 16px;
+}
+
+QWidget#mainContent QGroupBox#outputCard::title {
+    left: 14px;
+    padding: 0 5px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QLabel#outputFolderCaption {
+    font-weight: 600;
+}
+
+QFrame#statusCard {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 8px;
 }
 
 QPushButton {
     border-radius: 7px;
     padding: 8px 14px;
+    font-size: 14px;
     font-weight: 600;
     min-height: 22px;
 }
@@ -64,10 +188,31 @@ QPushButton {
 QPushButton#convertButton {
     font-size: 16px;
     font-weight: 700;
+    min-height: 40px;
 }
 
 QPushButton#cancelButton {
     font-weight: 700;
+}
+
+QLabel#idleStatusLabel {
+    padding: 0;
+    font-size: 13px;
+}
+
+QLabel#progressSummaryLabel,
+QLabel#currentFileLabel {
+    font-weight: 700;
+}
+
+QLabel#progressPercentLabel {
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 52px;
+}
+
+QLabel#progressStatusLabel {
+    font-size: 13px;
 }
 
 QComboBox,
@@ -75,6 +220,7 @@ QLineEdit,
 QSpinBox {
     border-radius: 7px;
     padding: 7px 10px;
+    font-size: 14px;
 }
 
 QComboBox::drop-down {
@@ -125,6 +271,7 @@ QHeaderView::section {
 }
 
 QScrollArea {
+    background-color: transparent;
     border: none;
 }
 

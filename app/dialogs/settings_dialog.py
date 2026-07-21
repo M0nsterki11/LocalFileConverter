@@ -146,7 +146,9 @@ class SettingsDialog(QDialog):
         self.output_directory_input = QLineEdit()
         self.output_directory_input.setReadOnly(True)
         self.select_output_button = QPushButton()
-        self.select_output_button.setIcon(get_icon(self, "folder"))
+        self.select_output_button.setIcon(
+            get_icon(self.select_output_button, "folder")
+        )
 
         self.open_output_checkbox = QCheckBox()
         self.summary_checkbox = QCheckBox()
@@ -230,9 +232,13 @@ class SettingsDialog(QDialog):
         self.libreoffice_path_input = QLineEdit()
         self.libreoffice_path_input.setReadOnly(True)
         self.detect_libreoffice_button = QPushButton()
-        self.detect_libreoffice_button.setIcon(get_icon(self, "settings"))
+        self.detect_libreoffice_button.setIcon(
+            get_icon(self.detect_libreoffice_button, "settings")
+        )
         self.select_libreoffice_button = QPushButton()
-        self.select_libreoffice_button.setIcon(get_icon(self, "folder"))
+        self.select_libreoffice_button.setIcon(
+            get_icon(self.select_libreoffice_button, "folder")
+        )
 
         libreoffice_layout.addWidget(self.libreoffice_path_label, 0, 0)
         libreoffice_layout.addWidget(
