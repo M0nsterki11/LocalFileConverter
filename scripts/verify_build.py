@@ -184,8 +184,8 @@ def _check_legal_notice_files(errors: list[str]) -> None:
     if parsed_url.scheme != "https" or parsed_url.netloc != "github.com":
         errors.append("SOURCE_CODE.md must use a stable HTTPS GitHub URL.")
 
-    if "v0.5.1" not in source_text:
-        errors.append("SOURCE_CODE.md does not identify tag v0.5.1.")
+    if "v0.6.2" not in source_text:
+        errors.append("SOURCE_CODE.md does not identify tag v0.6.2.")
 
 
 def _check_bundle_notice_files(bundle_path: Path, errors: list[str]) -> None:

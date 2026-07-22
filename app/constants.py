@@ -1,7 +1,7 @@
 """Shared product metadata and supported conversion formats."""
 
 APP_NAME = "MyFile Converter"
-APP_VERSION = "0.5.1"
+APP_VERSION = "0.6.2"
 APP_ORGANIZATION = "LocalFileConverter"
 APP_SETTINGS_APPLICATION_NAME = "Local File Converter"
 GITHUB_REPOSITORY_URL = (

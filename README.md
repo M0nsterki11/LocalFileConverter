@@ -1,7 +1,7 @@
 MyFile Converter
 ================
 
-Version: 0.5.1
+Version: 0.6.2
 
 MyFile Converter is a simple Windows desktop app built with Python and
 PySide6. Everything is done locally on the PC; documents are not
@@ -179,7 +179,7 @@ If the ONEDIR build is already fresh, the app build can be skipped:
 The final Setup EXE is here:
 
 ```text
-installer_output\MyFileConverter_Setup_0.5.1_x64.exe
+installer_output\MyFileConverter_Setup_0.6.2_x64.exe
 ```
 
 The installer is per-user and installs the app into:
